@@ -259,6 +259,13 @@ which then takes precedence over `Threads`:
 future::plan(future::multisession, workers = 8)
 ```
 
+LUG estimation sends the expression data to the workers in chunks (the data
+rides inside `future`'s `X`, so each worker only receives its own chunk instead
+of a copy of the whole matrix). The default is **one chunk per worker**
+(`ceiling(nGenes / Threads)`), which is optimal when the per-gene cost is
+uniform. Control it with `ChunkSize = <genes per chunk>` if needed — smaller
+chunks (with dynamic scheduling) only help when per-gene cost varies a lot.
+
 ### Large datasets (`future.globals.maxSize`)
 
 With `multisession`, the objects a worker needs are *copied* to the workers, so a

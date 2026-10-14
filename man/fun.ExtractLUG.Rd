@@ -16,7 +16,8 @@ fun.ExtractLUG(
   Redo = FALSE,
   Assay = NULL,
   Layer = "data",
-  Force = FALSE
+  Force = FALSE,
+  ChunkSize = NULL
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ fun.ExtractLUG(
 \item{Layer}{Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")}
 
 \item{Force}{Recompute cached files (per-gene \verb{LUG/*.rds} and \verb{Shuffle/*.rds}) instead of skipping them. (default: FALSE)}
+
+\item{ChunkSize}{Number of genes per parallel chunk in LUG estimation. (default: NULL, i.e. one chunk per worker)}
 }
 \value{
 A dataframe of inferred LUGs.

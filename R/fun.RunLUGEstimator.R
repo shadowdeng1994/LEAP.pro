@@ -11,12 +11,14 @@
 #' @param Assay Assay of the Seurat object to use. (default: NULL, the default assay is used)
 #' @param Layer Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")
 #' @param Force Recompute genes whose `LUG/*.rds` already exists. (default: FALSE)
+#' @param ChunkSize Number of genes per parallel chunk. (default: NULL, i.e.
+#'   `ceiling(nGenes / Threads)` -> one chunk per worker)
 #'
 #' @returns NULL.
 #' @export
 #'
 #' @examples fun.RunLUEEstimator(Data.TarCA,Var.TPM)
-fun.RunLUGEstimator <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=0.1,Threads=4,Redo=FALSE,Assay=NULL,Layer="data",Force=FALSE){
+fun.RunLUGEstimator <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=0.1,Threads=4,Redo=FALSE,Assay=NULL,Layer="data",Force=FALSE,ChunkSize=NULL){
   Redo <- isTRUE(Redo)||isTRUE(Force)
   tmp.dirout <- paste0(DirOut,"/LUG/")
   if(!dir.exists(tmp.dirout)){ dir.create(tmp.dirout,recursive = T) }
@@ -61,24 +63,53 @@ fun.RunLUGEstimator <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",Top
               nrow(tmp.expMatrix)-length(tmp.genes)," cached).",level=2)
 
   if(length(tmp.genes)>0){
-    tmp.todo <- tmp.expMatrix[tmp.genes,,drop=FALSE]
-    rm(tmp.expMatrix)
-    gc()
+    ## Chunk size: default one chunk per worker (ceil(nGenes/Threads)); smaller
+    ## chunks with dynamic scheduling (see below) help only when per-gene cost
+    ## varies a lot.
+    if(is.null(ChunkSize)){ ChunkSize <- ceiling(length(tmp.genes)/max(1L,Threads)) }
+    ChunkSize <- max(1L,as.integer(ChunkSize))
+    tmp.chunks <- split(tmp.genes,ceiling(seq_along(tmp.genes)/ChunkSize))
+    fun.message("--> ",length(tmp.chunks)," chunk(s) of <= ",ChunkSize,
+                " genes (Threads=",Threads,").",level=2)
 
     tmp.old <- fun.SetPlan(Threads)
     on.exit(future::plan(tmp.old),add=TRUE)
 
-    ## The worker is a package-level function so `future` serialises only it and
-    ## the objects passed explicitly, instead of the whole calling frame (which
-    ## holds the full expression matrix / Seurat / TarCA object).
-    fun.ParLapply(tmp.genes,fun.LUGEstimator_one,Threads,
-                  expMatrix=tmp.todo,NodeIndex=tmp.ni,TopGene=TopGene,
-                  dirout=tmp.dirout,Redo=TRUE)
-    rm(tmp.todo)
+    ## Carry each chunk's expression sub-matrix INSIDE X so `future` sends each
+    ## worker only its own chunk. Passing the matrix as a global instead makes
+    ## future copy the whole matrix to every worker (measured peak ~17x the
+    ## data), which is what makes memory blow up.
+    tmp.X <- lapply(tmp.chunks,function(gg){
+      list(genes=gg,mat=tmp.expMatrix[gg,,drop=FALSE])
+    })
+    rm(tmp.expMatrix,tmp.chunks)
+    gc()
+
+    ## Scheduling=Inf => one future per chunk (dynamic balancing); equal-sized
+    ## chunks with one chunk per worker need no balancing, so this is free there.
+    fun.ParLapply(tmp.X,fun.LUGEstimator_chunk,Threads,
+                  NodeIndex=tmp.ni,TopGene=TopGene,dirout=tmp.dirout,Scheduling=Inf)
+    rm(tmp.X)
     gc()
   }
 
   fun.message("## Running LUG detector completed.")
+}
+
+#' Estimate Np for a chunk of genes (internal worker).
+#'
+#' @param chunk A list with `genes` (character) and `mat` (their expression rows).
+#' @param NodeIndex The `NodeIndex` of the tree.
+#' @param TopGene Binarisation threshold.
+#' @param dirout Directory for the per-gene `.rds`.
+#'
+#' @return NULL.
+#' @noRd
+fun.LUGEstimator_chunk <- function(chunk,NodeIndex,TopGene,dirout){
+  for(ggg in chunk$genes){
+    fun.LUGEstimator_one(ggg,chunk$mat,NodeIndex,TopGene,dirout,TRUE)
+  }
+  return(NULL)
 }
 
 #' Estimate Np for a single gene (internal worker).

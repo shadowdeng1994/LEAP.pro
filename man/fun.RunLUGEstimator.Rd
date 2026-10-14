@@ -13,7 +13,8 @@ fun.RunLUGEstimator(
   Redo = FALSE,
   Assay = NULL,
   Layer = "data",
-  Force = FALSE
+  Force = FALSE,
+  ChunkSize = NULL
 )
 }
 \arguments{
@@ -35,6 +36,9 @@ phylogeny, or a Seurat object whose cells match the tree tips.}
 \item{Layer}{Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")}
 
 \item{Force}{Recompute genes whose \verb{LUG/*.rds} already exists. (default: FALSE)}
+
+\item{ChunkSize}{Number of genes per parallel chunk. (default: NULL, i.e.
+\code{ceiling(nGenes / Threads)} -> one chunk per worker)}
 }
 \value{
 NULL.

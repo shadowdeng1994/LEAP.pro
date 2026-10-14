@@ -21,7 +21,8 @@ GetInternalMatrix(
   Assay = NULL,
   Layer = "data",
   OnlyLUG = FALSE,
-  Force = FALSE
+  Force = FALSE,
+  ChunkSize = NULL
 )
 }
 \arguments{
@@ -58,6 +59,8 @@ GetInternalMatrix(
 \item{OnlyLUG}{If TRUE, run only the LUG-extraction step and return the LUGs (skip PhyloDepth conversion and internal-state inference). (default: FALSE)}
 
 \item{Force}{Recompute cached files (per-gene \verb{LUG/*.rds} and \verb{Shuffle/*.rds}) instead of skipping them. (default: FALSE)}
+
+\item{ChunkSize}{Number of genes per parallel chunk in LUG estimation. (default: NULL, i.e. one chunk per worker)}
 }
 \value{
 A matrix of inferred transcriptome of internal nodes, or a dataframe of LUGs when \code{OnlyLUG = TRUE}.

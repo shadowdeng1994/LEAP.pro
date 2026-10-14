@@ -29,10 +29,18 @@ fun.SetPlan <- function(Threads=1){
 #' @param FUN Function to apply to each element.
 #' @param Threads Number of workers. (default: 1)
 #' @param ... Further arguments passed to `FUN`.
+#' @param Scheduling Passed to `future.apply::future_lapply` as
+#'   `future.scheduling`; `Inf` schedules one future per element (dynamic load
+#'   balancing, useful when element costs vary). (default: NULL, future's own
+#'   default)
 #'
 #' @return A list.
 #' @noRd
-fun.ParLapply <- function(X,FUN,Threads=1,...){
+fun.ParLapply <- function(X,FUN,Threads=1,...,Scheduling=NULL){
   if(is.null(Threads)||Threads<=1||length(X)<=1){ return(lapply(X,FUN,...)) }
-  future.apply::future_lapply(X,FUN,...,future.seed=TRUE)
+  if(is.null(Scheduling)){
+    future.apply::future_lapply(X,FUN,...,future.seed=TRUE)
+  }else{
+    future.apply::future_lapply(X,FUN,...,future.seed=TRUE,future.scheduling=Scheduling)
+  }
 }

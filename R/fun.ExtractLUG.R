@@ -14,13 +14,14 @@
 #' @param Assay Assay of the Seurat object to use. (default: NULL, the default assay is used)
 #' @param Layer Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")
 #' @param Force Recompute cached files (per-gene `LUG/*.rds` and `Shuffle/*.rds`) instead of skipping them. (default: FALSE)
+#' @param ChunkSize Number of genes per parallel chunk in LUG estimation. (default: NULL, i.e. one chunk per worker)
 #'
 #' @returns A dataframe of inferred LUGs.
 #' @export
 #'
 #' @examples Data.TarCA <- CreateTarCAObject(Var.Tree,Var.Ann)
 #' @examples Var.LUGs <- fun.ExtractLUG(Data.TarCA,Var.TPM)
-fun.ExtractLUG <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=0.1,NumShuf=1000,p_threshold=0.01,SeedFrom=NULL,Threads=4,Redo=FALSE,Assay=NULL,Layer="data",Force=FALSE){
+fun.ExtractLUG <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=0.1,NumShuf=1000,p_threshold=0.01,SeedFrom=NULL,Threads=4,Redo=FALSE,Assay=NULL,Layer="data",Force=FALSE,ChunkSize=NULL){
   if(!dir.exists(DirOut)){
     fun.message("--> ",DirOut,"is absent. Creating.")
     dir.create(DirOut)
@@ -28,7 +29,7 @@ fun.ExtractLUG <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=
 
   fun.message("--> Running LUG estimator.")
   tmp.t <- Sys.time()
-  fun.RunLUGEstimator(TarCAObject,ExpreMatrix,DirOut,TopGene,Threads,Redo,Assay,Layer,Force)
+  fun.RunLUGEstimator(TarCAObject,ExpreMatrix,DirOut,TopGene,Threads,Redo,Assay,Layer,Force,ChunkSize)
   fun.message("--> LUG estimator done in ",fun.secs(tmp.t),"s.")
 
   tmp.t <- Sys.time()
