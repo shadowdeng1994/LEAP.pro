@@ -50,28 +50,46 @@ fun.RunLUGEstimator <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",Top
   tmp.old <- fun.SetPlan(Threads)
   on.exit(future::plan(tmp.old),add=TRUE)
 
-  fun.ParLapply(rownames(tmp.expMatrix),function(ggg){
-    tmp.fileout <- paste0(tmp.dirout,"/",ggg,".rds")
-    if(!file.exists(tmp.fileout)|Redo){
-      tmp.ann <- percent_rank(as.numeric(tmp.expMatrix[ggg,]))>(1-TopGene)
-      tmp.res <- fun.LEU_Estimator(tmp.ni,tmp.ann)
-
-      if(is.null(tmp.res)){
-        tmp.res <- list(
-          PosTips=integer(0),
-          FilterBiasParent=data.frame(Filter=logical(0)),
-          "LEU_Estimator"=data.frame(TipAnn=TRUE,MonoInfo=NA,Total=sum(tmp.ann),Np=Inf)
-        )
-      }else{
-        ## Only the positive tip positions and the filtered nodes are needed
-        ## downstream (avoids storing one label string per cell and gene).
-        tmp.res$PosTips <- which(tmp.ann)
-      }
-
-      saveRDS(tmp.res,file=tmp.fileout)
-      return()
-    }
-  },Threads)
+  ## The worker is a package-level function so `future` serialises only it and
+  ## the (small) objects passed explicitly, instead of the whole calling frame
+  ## (which holds the full expression matrix / Seurat / TarCA object).
+  fun.ParLapply(rownames(tmp.expMatrix),fun.LUGEstimator_one,Threads,
+                expMatrix=tmp.expMatrix,NodeIndex=tmp.ni,TopGene=TopGene,
+                dirout=tmp.dirout,Redo=Redo)
 
   fun.message("## Running LUG detector completed.")
+}
+
+#' Estimate Np for a single gene (internal worker).
+#'
+#' @param ggg Gene name (row of `expMatrix`).
+#' @param expMatrix Genes x cells expression matrix (tree-tip columns).
+#' @param NodeIndex The `NodeIndex` of the tree.
+#' @param TopGene Binarisation threshold.
+#' @param dirout Directory for the per-gene `.rds`.
+#' @param Redo Recompute even if the file exists.
+#'
+#' @return NULL (writes a file).
+#' @noRd
+fun.LUGEstimator_one <- function(ggg,expMatrix,NodeIndex,TopGene,dirout,Redo){
+  tmp.fileout <- paste0(dirout,"/",ggg,".rds")
+  if(!file.exists(tmp.fileout)|Redo){
+    tmp.ann <- percent_rank(as.numeric(expMatrix[ggg,]))>(1-TopGene)
+    tmp.res <- fun.LEU_Estimator(NodeIndex,tmp.ann)
+
+    if(is.null(tmp.res)){
+      tmp.res <- list(
+        PosTips=integer(0),
+        FilterBiasParent=data.frame(Filter=logical(0)),
+        "LEU_Estimator"=data.frame(TipAnn=TRUE,MonoInfo=NA,Total=sum(tmp.ann),Np=Inf)
+      )
+    }else{
+      ## Only the positive tip positions and the filtered nodes are needed
+      ## downstream (avoids storing one label string per cell and gene).
+      tmp.res$PosTips <- which(tmp.ann)
+    }
+
+    saveRDS(tmp.res,file=tmp.fileout)
+  }
+  return(NULL)
 }

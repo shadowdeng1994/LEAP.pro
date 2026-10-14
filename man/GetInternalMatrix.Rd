@@ -19,7 +19,8 @@ GetInternalMatrix(
   SaveObject = TRUE,
   Redo = FALSE,
   Assay = NULL,
-  Layer = "data"
+  Layer = "data",
+  OnlyLUG = FALSE
 )
 }
 \arguments{
@@ -27,7 +28,7 @@ GetInternalMatrix(
 
 \item{ExpreMatrix}{A matrix of expression levels corresponding to the cell phylogeny, or a Seurat object whose cells match the tree tips. (default: NULL)}
 
-\item{LUGs}{A dataframe of LUGs obtained from fun.ExtractLUG. (optional,default: NULL)}
+\item{LUGs}{Either a dataframe of LUGs obtained from fun.ExtractLUG, or a plain character vector of LUG gene symbols. If supplied, the LUG-estimation step is skipped (the per-gene \verb{LUG/*.rds} files must already exist in \code{DirOut}). (optional,default: NULL)}
 
 \item{PhyloDepth}{A dataframe of PhyloDepth obtained from fun.GetPhyloDepthOfLUGs. (optional,default: NULL)}
 
@@ -52,9 +53,11 @@ GetInternalMatrix(
 \item{Assay}{Assay of the Seurat object to use. (default: NULL, the default assay is used)}
 
 \item{Layer}{Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")}
+
+\item{OnlyLUG}{If TRUE, run only the LUG-extraction step and return the LUGs (skip PhyloDepth conversion and internal-state inference). (default: FALSE)}
 }
 \value{
-A matrix of inferred transcriptome of internal nodes.
+A matrix of inferred transcriptome of internal nodes, or a dataframe of LUGs when \code{OnlyLUG = TRUE}.
 }
 \description{
 Reconstruct the transcriptome of internal nodes based on LUG inference.
@@ -62,4 +65,6 @@ Reconstruct the transcriptome of internal nodes based on LUG inference.
 \examples{
 Data.TarCA <- CreateTarCAObject(Var.Tree,Var.Ann)
 Var.InternalState <- GetInternalMatrix(Data.TarCA,Var.TPM)
+Var.LUGs <- GetInternalMatrix(Data.TarCA,Var.TPM,OnlyLUG=TRUE)
+Var.InternalState <- GetInternalMatrix(Data.TarCA,LUGs=c("GeneA","GeneB"))
 }

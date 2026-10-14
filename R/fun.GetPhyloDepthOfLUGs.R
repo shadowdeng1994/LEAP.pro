@@ -27,48 +27,65 @@ fun.GetPhyloDepthOfLUGs <- function(TarCAObject,LUG,DirOut="LEAPOutput/",Threads
 
   Var.PhyloDepthOfLUGs <-
   LUG %>% filter(Sig) %>% .$Symbol %>%
-  fun.ParLapply(function(ggg){
-    tmp1 <- readRDS(paste0(DirOut,"/LUG/",ggg,".rds"))
+  fun.ParLapply(fun.PhyloDepth_one,Threads,
+                DirOut=DirOut,NodeIndex=tmp.ni,Nor_x=tmp.Nor_x,cellAnn=tmp.cellAnn,
+                tin=tmp.tin,tout=tmp.tout,tipLabels=tmp.tipLabels)
 
-    tmp.fbp <- tmp1$FilterBiasParent
-    if(is.null(tmp.fbp)||nrow(tmp.fbp)==0){ return(NULL) }
-    tmp.nodes <- rownames(tmp.fbp)[tmp.fbp$Filter]
-    if(length(tmp.nodes)==0){ return(NULL) }
-
-    if(length(tmp1$PosTips)==0){ return(NULL) }
-    tmp.posTips <- tmp.tipLabels[tmp1$PosTips]
-
-    ## Index the positive tips by pre-order position once, then slice the
-    ## band that falls inside each filtered node with two binary searches.
-    ## Filtered nodes may nest, so a tip can belong to several nodes (as in
-    ## the original implementation); cost is O(#nodes*log n + output) rather
-    ## than walking each node's whole clade.
-    tmp.pos <- tmp.tin[tmp.posTips]
-    tmp.o <- order(tmp.pos)
-    tmp.posS <- tmp.pos[tmp.o]
-    tmp.tipS <- tmp.posTips[tmp.o]
-
-    tmp.res <- vector("list",length(tmp.nodes))
-    for(i in seq_along(tmp.nodes)){
-      nnn <- tmp.nodes[i]
-      lo <- findInterval(tmp.tin[[nnn]]-1L,tmp.posS)+1L
-      hi <- findInterval(tmp.tout[[nnn]],tmp.posS)
-      if(hi>=lo){
-        tmp.res[[i]] <- data.frame(TipLabel=tmp.tipS[lo:hi],Node=nnn,stringsAsFactors=FALSE)
-      }
-    }
-    tmp3 <- bind_rows(tmp.res)
-    if(is.null(tmp3)||nrow(tmp3)==0){ return(NULL) }
-
-    data.frame(
-      TipLabel=tmp3$TipLabel,
-      TipAnn=as.character(tmp.cellAnn[tmp3$TipLabel]),
-      Node=tmp3$Node,
-      Nor_x=as.numeric(tmp.Nor_x[tmp3$Node]),
-      Symbol=ggg,
-      stringsAsFactors=FALSE
-    )
-  },Threads) %>% bind_rows
+  Var.PhyloDepthOfLUGs <- as.data.frame(data.table::rbindlist(Var.PhyloDepthOfLUGs,use.names=TRUE,fill=TRUE))
 
   return(Var.PhyloDepthOfLUGs)
+}
+
+#' Map one gene's activation nodes to the depths of their positive tips (internal worker).
+#'
+#' @param ggg Gene symbol.
+#' @param DirOut Directory holding `LUG/<gene>.rds`.
+#' @param NodeIndex The `NodeIndex` of the tree.
+#' @param Nor_x Normalised node depths, named by node label.
+#' @param cellAnn Cell-type annotation, named by tip label.
+#' @param tin,tout Named pre-order in/out positions.
+#' @param tipLabels Tip labels in tree order.
+#'
+#' @return A data.frame (TipLabel/TipAnn/Node/Nor_x/Symbol) or NULL.
+#' @noRd
+fun.PhyloDepth_one <- function(ggg,DirOut,NodeIndex,Nor_x,cellAnn,tin,tout,tipLabels){
+  tmp1 <- readRDS(paste0(DirOut,"/LUG/",ggg,".rds"))
+
+  tmp.fbp <- tmp1$FilterBiasParent
+  if(is.null(tmp.fbp)||nrow(tmp.fbp)==0){ return(NULL) }
+  tmp.nodes <- rownames(tmp.fbp)[tmp.fbp$Filter]
+  if(length(tmp.nodes)==0){ return(NULL) }
+
+  if(length(tmp1$PosTips)==0){ return(NULL) }
+  tmp.posTips <- tipLabels[tmp1$PosTips]
+
+  ## Index the positive tips by pre-order position once, then slice the band
+  ## that falls inside each filtered node with two binary searches. Filtered
+  ## nodes may nest, so a tip can belong to several nodes (as in the original
+  ## implementation); cost is O(#nodes*log n + output).
+  tmp.pos <- tin[tmp.posTips]
+  tmp.o <- order(tmp.pos)
+  tmp.posS <- tmp.pos[tmp.o]
+  tmp.tipS <- tmp.posTips[tmp.o]
+
+  tmp.res <- vector("list",length(tmp.nodes))
+  for(i in seq_along(tmp.nodes)){
+    nnn <- tmp.nodes[i]
+    lo <- findInterval(tin[[nnn]]-1L,tmp.posS)+1L
+    hi <- findInterval(tout[[nnn]],tmp.posS)
+    if(hi>=lo){
+      tmp.res[[i]] <- data.frame(TipLabel=tmp.tipS[lo:hi],Node=nnn,stringsAsFactors=FALSE)
+    }
+  }
+  tmp3 <- data.table::rbindlist(tmp.res)
+  if(nrow(tmp3)==0){ return(NULL) }
+
+  data.frame(
+    TipLabel=tmp3$TipLabel,
+    TipAnn=as.character(cellAnn[tmp3$TipLabel]),
+    Node=tmp3$Node,
+    Nor_x=as.numeric(Nor_x[tmp3$Node]),
+    Symbol=ggg,
+    stringsAsFactors=FALSE
+  )
 }

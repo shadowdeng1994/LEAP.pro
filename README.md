@@ -218,6 +218,35 @@ Var.ReferenceMatrix <- GetReferenceMatrix(
 )
 ```
 
+### Running only the LUG step, or reusing a LUG set
+
+Use `OnlyLUG = TRUE` to run **only** the LUG-detection step (it stops before
+PhyloDepth conversion and internal-state inference) and return the detected LUGs:
+
+```r
+Var.LUGs <- GetInternalMatrix(
+  Data.TarCA,
+  Var.Expression,
+  SeedFrom = 1,
+  DirOut = "MyOutput/",
+  Threads = 90,
+  SaveObject = TRUE,
+  OnlyLUG = TRUE          # return the LUG data.frame and stop
+)
+```
+
+If you already have a set of LUG genes, pass them directly (a **character vector**
+of gene symbols) to skip the expensive LUG-estimation step. The per-gene
+`LUG/*.rds` files must already exist in `DirOut` (e.g. produced by a previous run):
+
+```r
+Var.InternalMatrix <- GetInternalMatrix(
+  Data.TarCA,
+  DirOut = "MyOutput/",
+  LUGs = Var.LUGs$Symbol[Var.LUGs$Sig]   # or any character vector of gene names
+)
+```
+
 ### Parallelism
 
 Pass `Threads` to the functions above; each call runs its gene- and

@@ -40,22 +40,9 @@ fun.RunShufLUGEstimator <- function(TarCAObject,ObsLUG,DirOut="LEAPOutput/",NumS
       tmp.totidx <- match(sss,tmp.set)
 
       tmp.out <-
-        fun.ParLapply(1:NumShuf,function(rrr){
-          if(!is.null(SeedFrom)){
-            ## Pin the RNG kind/sample kind so the stream is identical whether
-            ## the workers run sequential or as future multisession processes.
-            set.seed(SeedFrom + (tmp.totidx-1L)*NumShuf + rrr,
-                     kind="Mersenne-Twister",sample.kind="Rejection")
-          }
-          tmp.ann <- sample(1:tmp.ntip)<=sss
-          tmp.res <- fun.LEU_Estimator(tmp.ni,tmp.ann)
-          if(is.null(tmp.res)){
-            tmp.res <- data.frame(TipAnn=TRUE,MonoInfo=NA,Total=sum(tmp.ann),Np=Inf)
-          }else{
-            tmp.res <- tmp.res$LEU_Estimator
-          }
-          return(tmp.res)
-        },Threads) %>% bind_rows
+        fun.ParLapply(1:NumShuf,fun.ShufLUGEstimator_one,Threads,
+                      NodeIndex=tmp.ni,ntip=tmp.ntip,sss=sss,
+                      SeedFrom=SeedFrom,NumShuf=NumShuf,totidx=tmp.totidx) %>% bind_rows
 
       saveRDS(tmp.out,file=tmp.fileout)
     }else{
@@ -67,4 +54,33 @@ fun.RunShufLUGEstimator <- function(TarCAObject,ObsLUG,DirOut="LEAPOutput/",NumS
   }) %>% bind_rows
 
   return(tmp.shuf)
+}
+
+#' One permutation replicate (internal worker).
+#'
+#' @param rrr Replicate index.
+#' @param NodeIndex The `NodeIndex` of the tree.
+#' @param ntip Number of tips.
+#' @param sss Number of TRUE tips for this permutation.
+#' @param SeedFrom Base seed (or NULL).
+#' @param NumShuf Number of permutations (used to derive the seed).
+#' @param totidx Index of the current `Total` (used to derive the seed).
+#'
+#' @return A one-row data.frame (TipAnn/MonoInfo/Total/Np).
+#' @noRd
+fun.ShufLUGEstimator_one <- function(rrr,NodeIndex,ntip,sss,SeedFrom,NumShuf,totidx){
+  if(!is.null(SeedFrom)){
+    ## Pin the RNG kind/sample kind so the stream is identical whether the
+    ## workers run sequential or as future multisession processes.
+    set.seed(SeedFrom + (totidx-1L)*NumShuf + rrr,
+             kind="Mersenne-Twister",sample.kind="Rejection")
+  }
+  tmp.ann <- sample(1:ntip)<=sss
+  tmp.res <- fun.LEU_Estimator(NodeIndex,tmp.ann)
+  if(is.null(tmp.res)){
+    tmp.res <- data.frame(TipAnn=TRUE,MonoInfo=NA,Total=sum(tmp.ann),Np=Inf)
+  }else{
+    tmp.res <- tmp.res$LEU_Estimator
+  }
+  tmp.res
 }

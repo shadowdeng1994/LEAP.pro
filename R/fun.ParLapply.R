@@ -28,10 +28,11 @@ fun.SetPlan <- function(Threads=1){
 #' @param X A vector or list.
 #' @param FUN Function to apply to each element.
 #' @param Threads Number of workers. (default: 1)
+#' @param ... Further arguments passed to `FUN`.
 #'
 #' @return A list.
 #' @noRd
-fun.ParLapply <- function(X,FUN,Threads=1){
-  if(is.null(Threads)||Threads<=1||length(X)<=1){ return(lapply(X,FUN)) }
-  future.apply::future_lapply(X,FUN,future.seed=TRUE)
+fun.ParLapply <- function(X,FUN,Threads=1,...){
+  if(is.null(Threads)||Threads<=1||length(X)<=1){ return(lapply(X,FUN,...)) }
+  future.apply::future_lapply(X,FUN,...,future.seed=TRUE)
 }

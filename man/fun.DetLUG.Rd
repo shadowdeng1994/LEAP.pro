@@ -13,7 +13,7 @@ fun.DetLUG(ObsLUG, ShufLUG, p_threshold = 0.01, Threads = 4)
 
 \item{p_threshold}{Threshold of empirical P-value. (default: 0.01)}
 
-\item{Threads}{Number of cores. (default: 4)}
+\item{Threads}{Number of cores. (retained for compatibility; the computation is vectorised)}
 }
 \value{
 A dataframe of inferred LUGs.
