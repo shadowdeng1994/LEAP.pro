@@ -41,7 +41,8 @@ GetReferenceMatrix <- function(ExpreMatrix,Metadata=NULL,GroupBy=NULL,TopGene=0.
   tmp.list <-
   names(tmp.set) %>%
   lapply(function(ttt){
-    fun.message("--> Group: ",ttt)
+    tmp.t <- Sys.time()
+    fun.message("--> Group: ",ttt," (",length(tmp.set[[ttt]])," cells)",level=2)
 
     tmp2 <- ExpreMatrix[,tmp.set[[ttt]],drop=FALSE]
     tmp.mat <- as.matrix(tmp2)
@@ -54,6 +55,7 @@ GetReferenceMatrix <- function(ExpreMatrix,Metadata=NULL,GroupBy=NULL,TopGene=0.
     tmp3 <- as.data.frame((tmp.pct > (1-TopGene))*1)
     dimnames(tmp3) <- dimnames(tmp.mat)
 
+    fun.message("--> Group ",ttt," done in ",fun.secs(tmp.t),"s.",level=2)
     return(tmp3)
   })
 

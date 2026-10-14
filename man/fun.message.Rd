@@ -4,10 +4,13 @@
 \alias{fun.message}
 \title{Title}
 \usage{
-fun.message(...)
+fun.message(..., level = 1)
 }
 \arguments{
 \item{...}{Message you want to print.}
+
+\item{level}{Minimum verbosity level (\code{options(LEAP.verbose)}, default 1) at
+which this message is printed. See \code{\link{fun.SetVerbose}}.}
 }
 \value{
 Message with time.

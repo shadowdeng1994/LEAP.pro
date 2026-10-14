@@ -24,9 +24,13 @@
 #' @examples Data.TarCA <- CreateTarCAObject(Var.Tree,Var.Ann)
 #' @examples Var.InternalState <- GetInternalMatrix(Data.TarCA,Var.TPM)
 GetInternalMatrix <- function(TarCAObject=NULL,ExpreMatrix=NULL,LUGs=NULL,PhyloDepth=NULL,DirOut="LEAPOutput/",TopGene=0.1,NumShuf=1000,p_threshold=0.01,MinAct=3,SeedFrom=NULL,Threads=4,SaveObject=TRUE,Redo=FALSE,Assay=NULL,Layer="data"){
+  tmp.t0 <- Sys.time()
+
   if(is.null(LUGs)){
     fun.message("==> Extracting LUG.")
+    tmp.t <- Sys.time()
     Var.LUGs <- fun.ExtractLUG(TarCAObject,ExpreMatrix,DirOut,TopGene,NumShuf,p_threshold,SeedFrom,Threads,Redo,Assay,Layer)
+    fun.message("==> Extracting LUG done in ",fun.secs(tmp.t),"s.")
   }else{
     fun.message("==> Using supplied LUGs.")
     Var.LUGs <- LUGs
@@ -34,23 +38,29 @@ GetInternalMatrix <- function(TarCAObject=NULL,ExpreMatrix=NULL,LUGs=NULL,PhyloD
 
   if(is.null(PhyloDepth)){
     fun.message("==> Converting to PhyloDepth.")
+    tmp.t <- Sys.time()
     Var.PhyloDepthOfLUGs <- fun.GetPhyloDepthOfLUGs(TarCAObject,Var.LUGs,DirOut=DirOut,Threads)
+    fun.message("==> Converting to PhyloDepth done in ",fun.secs(tmp.t),"s.")
   }else{
     fun.message("==> Using supplied PhyloDepth.")
     Var.PhyloDepthOfLUGs <- PhyloDepth
   }
 
   fun.message("==> Inferring internal state.")
+  tmp.t <- Sys.time()
   Var.InternalState <- fun.GetInternalState(Var.PhyloDepthOfLUGs,MinAct,Threads)
+  fun.message("==> Inferring internal state done in ",fun.secs(tmp.t),"s.")
 
   if(SaveObject){
     fun.message("==> Saving to ",DirOut,".")
+    tmp.t <- Sys.time()
     saveRDS(Var.LUGs,paste0(DirOut,"/Var.LUGs.rds"))
     saveRDS(Var.PhyloDepthOfLUGs,paste0(DirOut,"/Var.PhyloDepthOfLUGs.rds"))
     saveRDS(Var.InternalState,paste0(DirOut,"/Var.InternalState.rds"))
+    fun.message("==> Saving done in ",fun.secs(tmp.t),"s.")
   }
+
+  fun.message("==> GetInternalMatrix total ",fun.secs(tmp.t0),"s.")
 
   return(Var.InternalState)
 }
-
-

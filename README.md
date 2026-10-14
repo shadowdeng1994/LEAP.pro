@@ -23,7 +23,7 @@ in a single step with [pak](https://pak.r-lib.org/):
 pak::pkg_install("shadowdeng1994/LEAP.pro")
 ```
 
-Alternatively, install the dependency explicitly before `LEAP.pro`:
+Alternatively, install the dependency explicitly first:
 
 ```r
 pak::pkg_install("shadowdeng1994/TarCA.pro")
@@ -49,45 +49,12 @@ library(future)
 library(Seurat)
 ```
 
-**Parallelism.** Pass `Threads` to the functions below; each call runs its gene-
-and permutation-level work on a `future` **multisession** backend with that many
-workers (works on Windows, macOS and Linux, and avoids the fork-related failures
-of `parallel::mclapply` inside RStudio). Alternatively, set your own plan once,
-which then takes precedence over `Threads`:
-
-```r
-future::plan(future::multisession, workers = 8)
-```
-
-**Large datasets (`future.globals.maxSize`).** With `multisession`, the objects a
-worker needs are *copied* to the workers, so a large query/reference matrix can
-exceed `future`'s default 500 MiB limit and raise
-`Error ... The total size of the ... globals ... exceeds the maximum allowed size 500.00 MiB`.
-Estimate the largest object that will be exported and raise the limit before
-calling the analysis functions:
-
-```r
-# size of the biggest object sent to the workers (e.g. the expression matrix)
-format(object.size(Var.Expression), units = "MiB")
-# a dense genes x cells matrix is about nrow(Var.Expression) * ncol(Var.Expression) * 8 bytes;
-# for a sparse (dgCMatrix) input use object.size() directly, or vapply over a few genes
-
-options(future.globals.maxSize = 2 * 1024^3)   # 2 GiB: set to ~1.5-2x the largest exported object
-# only if you are certain the transfer is intended:
-options(future.globals.maxSize = Inf)
-```
-
-The option must be set **before** calling `GetInternalMatrix()` /
-`GetReferenceMatrix()`. For very large data on Linux/macOS, `future::plan(future::multicore)`
-shares memory between workers instead of copying it, but `multicore` forks and can
-hit the same RStudio issues as `parallel::mclapply`.
-
 ### 2. Load demo data
 
 Demo data can be downloaded from [LEAP_sourcedata](https://github.com/shadowdeng1994/LEAP_sourcedata). It includes:
 
 - **Query data**: a reconstructed cell phylogeny (`Var.Tree`), tip annotations (`Var.Ann`), and a gene expression matrix (`Var.Expression`)
-- **Reference data**: a reference expression matrix (`Data.Ref_Expression`) and metadata (`Data.Ref_metadata`) for label transfer
+- **Reference data**: a reference expression matrix (`Data.Ref_Expression`) and metadata (`Data.Ref_metadata`)
 
 ```r
 load("DemoData/Query.RData")
@@ -96,7 +63,7 @@ load("DemoData/Reference.RData")
 
 ### 3. Create TarCA object
 
-Convert the phylogenetic tree and tip annotations into a TarCA object, which serves as the central data structure for all downstream analyses.
+Convert the phylogenetic tree and tip annotations into a TarCA object, the central data structure for all downstream analyses.
 
 ```r
 Data.TarCA <- CreateTarCAObject(Var.Tree, Var.Ann)
@@ -104,19 +71,17 @@ Data.TarCA <- CreateTarCAObject(Var.Tree, Var.Ann)
 
 ### 4. Reconstruct internal node transcriptome
 
-This is the core step of LEAP. It performs three sub-steps automatically:
+This is the core step. It automatically performs three sub-steps:
 
 1. **LUG detection** — identifies lineage-specific upregulated genes using a permutation test (1000 shuffles by default)
 2. **Phylogenetic depth conversion** — maps LUG activation events onto the phylogenetic depth of internal nodes
 3. **Internal state inference** — reconstructs the binarized transcriptome of each internal node
 
-The permutation test uses `SeedFrom` to make the empirical P-values reproducible; leave it `NULL` (default) to use random seeds. `TopGene` is the top fraction of cells (within each group) treated as "highly expressed" when binarizing; use the **same value for the query and the reference** so the two binarized matrices are comparable (default `0.1`; smaller is stricter, larger is more permissive). Results are written to `DirOut` (default `"LEAPOutput/"`, created automatically); use the same `DirOut` across steps so the cached `LUG/` and `Shuffle/` files can be reused.
-
 ```r
 Var.InternalMatrix <- GetInternalMatrix(
   Data.TarCA,
   Var.Expression,
-  TopGene = 0.1,           # top fraction of cells binarized as "expressed" (default 0.1)
+  TopGene = 0.1,           # top fraction of cells binarized as "expressed"
   SeedFrom = 1,            # set (any integer) for reproducible LUG detection
   DirOut = "MyOutput/",    # output directory (created if missing)
   Threads = 90,
@@ -124,25 +89,10 @@ Var.InternalMatrix <- GetInternalMatrix(
 )
 ```
 
-`ExpreMatrix` can also be a **Seurat object** whose cells match the tree tips (extra cells are dropped; missing tips raise an error). Pick the assay and layer/slot with `Assay` and `Layer`:
-
-```r
-Var.InternalMatrix <- GetInternalMatrix(
-  Data.TarCA,
-  QuerySeurat,             # a Seurat object (cells aligned to Data.TarCA$Tree$tip.label)
-  Assay = "RNA",           # assay to use (default: DefaultAssay(QuerySeurat))
-  Layer = "data",          # Seurat >= 5 layer, e.g. "data"/"counts"; older Seurat uses the matching slot
-  TopGene = 0.1,
-  SeedFrom = 1,
-  DirOut = "MyOutput/",
-  Threads = 90,
-  SaveObject = TRUE
-)
-```
-
 ### 5. Binarize reference data
 
-Convert the reference scRNA-seq dataset into a binarized matrix using the same LUG genes, grouped by developmental time bins or other metadata categories.
+Convert the reference scRNA-seq dataset into a binarized matrix using the same
+LUG genes, grouped by developmental time bins or other metadata categories.
 
 ```r
 tmp.overlapLUG <- intersect(rownames(Var.InternalMatrix), rownames(Data.Ref_Expression))
@@ -158,33 +108,17 @@ Var.ReferenceMatrix <- GetReferenceMatrix(
 )
 ```
 
-`ExpreMatrix` can instead be a **Seurat object**; its metadata (`obj[[]]`) is then used automatically and `Metadata` can be omitted. Subset to the same LUG genes first, and choose the data with `Assay`/`Layer`:
-
-```r
-RefSeurat <- subset(RefSeurat, features = intersect(rownames(Var.InternalMatrix), rownames(RefSeurat)))
-
-Var.ReferenceMatrix <- GetReferenceMatrix(
-  RefSeurat,               # a Seurat object
-  GroupBy = "embryo.time.bin",  # a column of RefSeurat's metadata
-  Assay = "RNA",           # assay to use (default: DefaultAssay(RefSeurat))
-  Layer = "data",          # Seurat >= 5 layer, e.g. "data"/"counts"; older Seurat uses the matching slot
-  TopGene = 0.1,
-  DirOut = "MyOutput/",
-  Threads = 90,
-  SaveObject = TRUE
-)
-```
-
 ### 6. Define transfer labels
 
-Create combined labels from reference metadata (e.g., time bin and lineage) for transferring to internal nodes.
+Create combined labels from reference metadata (e.g., time bin and lineage) for
+transferring to internal nodes.
 
 ```r
 tmp.Label <- setNames(
   paste0(Data.Ref_metadata$embryo.time.bin, "|", Data.Ref_metadata$lineage),
   rownames(Data.Ref_metadata)
 )
-tmp.Label <- tmp.Label[colnames(Var.ReferenceMatrix)]
+tmp.Label <- tmp.Label[colnames(Var.ReferenceMatrix)]   # align to the (grouped) reference columns
 ```
 
 ### 7. Run label transfer
@@ -227,6 +161,7 @@ Var.PredictedState <- GetPredictedState(
 | `fun.ExtractLUG` | Infer LUGs based on permutation test |
 | `fun.CalculatePotency` | Calculate Shannon entropy-based potency for each internal node |
 | `fun.AssignLaterState` | Propagate predicted states through the internal node hierarchy |
+| `fun.SetVerbose` | Set the log verbosity level (0 silent, 1 steps + timing, 2 details) |
 
 ## Output
 
@@ -240,6 +175,122 @@ All results are saved to the directory given by `DirOut` (default `"LEAPOutput/"
 - `Var.Anchors.rds` — transfer anchors
 - `Var.Predictions.rds` — label transfer predictions
 - `Var.PredictedState.rds` — final predicted states mapped onto the phylogeny
+
+## Notes
+
+### Using Seurat objects as input
+
+Both the query and the reference can be supplied directly as **Seurat objects**
+(their cells must match the tree tips). Extra cells are dropped; missing tips
+raise an error. Choose the data with `Assay` and `Layer` (Seurat >= 5 uses a
+`layer`; older Seurat uses the matching `slot`).
+
+Query:
+
+```r
+Var.InternalMatrix <- GetInternalMatrix(
+  Data.TarCA,
+  QuerySeurat,             # a Seurat object (cells aligned to Data.TarCA$Tree$tip.label)
+  Assay = "RNA",           # default: DefaultAssay(QuerySeurat)
+  Layer = "data",          # e.g. "data"/"counts"
+  TopGene = 0.1,
+  SeedFrom = 1,
+  DirOut = "MyOutput/",
+  Threads = 90,
+  SaveObject = TRUE
+)
+```
+
+Reference (its metadata `obj[[]]` is used automatically, so `Metadata` can be omitted):
+
+```r
+RefSeurat <- subset(RefSeurat, features = intersect(rownames(Var.InternalMatrix), rownames(RefSeurat)))
+
+Var.ReferenceMatrix <- GetReferenceMatrix(
+  RefSeurat,                    # a Seurat object
+  GroupBy = "embryo.time.bin",  # a column of RefSeurat's metadata
+  Assay = "RNA",
+  Layer = "data",
+  TopGene = 0.1,
+  DirOut = "MyOutput/",
+  Threads = 90,
+  SaveObject = TRUE
+)
+```
+
+### Parallelism
+
+Pass `Threads` to the functions above; each call runs its gene- and
+permutation-level work on a `future` **multisession** backend with that many
+workers (works on Windows, macOS and Linux, and avoids the fork-related failures
+of `parallel::mclapply` inside RStudio). Alternatively, set your own plan once,
+which then takes precedence over `Threads`:
+
+```r
+future::plan(future::multisession, workers = 8)
+```
+
+### Large datasets (`future.globals.maxSize`)
+
+With `multisession`, the objects a worker needs are *copied* to the workers, so a
+large query/reference matrix can exceed `future`'s default 500 MiB limit and raise
+`Error ... The total size of the ... globals ... exceeds the maximum allowed size 500.00 MiB`.
+Estimate the largest object that will be exported and raise the limit before
+calling the analysis functions:
+
+```r
+# size of the biggest object sent to the workers (e.g. the expression matrix)
+format(object.size(Var.Expression), units = "MiB")
+# a dense genes x cells matrix is about nrow(Var.Expression) * ncol(Var.Expression) * 8 bytes;
+# for a sparse (dgCMatrix) input use object.size() directly
+
+options(future.globals.maxSize = 2 * 1024^3)   # set to ~1.5-2x the largest exported object
+# only if you are certain the transfer is intended:
+options(future.globals.maxSize = Inf)
+```
+
+For very large data on Linux/macOS, `future::plan(future::multicore)` shares
+memory between workers instead of copying it, but `multicore` forks and can hit
+the same RStudio issues as `parallel::mclapply`.
+
+### Verbosity and timing
+
+Progress output is controlled by a verbosity level (`options(LEAP.verbose)`,
+default `1`). Every step reports its elapsed time so you can see where time is
+spent. Set it **before** running the analysis:
+
+```r
+fun.SetVerbose(2)              # 0 = silent, 1 = main steps + timing (default), 2 = per-step details
+# or, equivalently:
+options(LEAP.verbose = 2)
+```
+
+For example, `GetInternalMatrix` prints the time of each sub-step, and at level
+`2` the per-`Total` shuffling times:
+
+```
+[..] ==> Extracting LUG.
+[..] --> Running LUG estimator.
+[..] --> LUG estimator done in  0.35 s.
+[..] --> Shuffling ( 10 times).
+[..] --> Shuffling done in  0.09 s.
+[..] --> LUG detection done in  0.22 s. ( 107  significant)
+[..] ==> Converting to PhyloDepth done in  0.32 s.
+[..] ==> Inferring internal state done in  0.03 s.
+[..] ==> GetInternalMatrix total  1.22 s.
+```
+
+### Reproducibility, thresholds and caching
+
+- **`SeedFrom`** makes the permutation test (empirical P-values) reproducible;
+  leave it `NULL` (default) to use random seeds.
+- **`TopGene`** is the top fraction of cells (within each group) treated as
+  "highly expressed" when binarizing. Use the **same value for the query and the
+  reference** so the two binarized matrices are comparable (default `0.1`;
+  smaller is stricter, larger is more permissive).
+- **`DirOut`** is where results and the cached `LUG/` and `Shuffle/` files are
+  written. Use the same `DirOut` across steps so the caches can be reused
+  (`Redo = FALSE`).
 
 ## Contributing
 ### Contributors

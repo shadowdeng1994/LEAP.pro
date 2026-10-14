@@ -27,12 +27,13 @@ fun.RunShufLUGEstimator <- function(TarCAObject,ObsLUG,DirOut="LEAPOutput/",NumS
   tmp.shuf <-
   tmp.set %>%
   lapply(function(sss){
-    fun.message("--> Total: ",sss,"(",match(sss,tmp.set),"/",length(tmp.set),")")
+    fun.message("--> Total: ",sss,"(",match(sss,tmp.set),"/",length(tmp.set),")",level=2)
 
     tmp.fileout <- paste0(tmp.dirout,"/Total_",sss,".rds")
+    tmp.t <- Sys.time()
 
     if(!file.exists(tmp.fileout)|Redo){
-      message("\tRunning...")
+      fun.message("\tRunning...",level=2)
 
       ## Unique, deterministic seed per (Total, replicate): reproducible
       ## regardless of worker scheduling.
@@ -58,9 +59,10 @@ fun.RunShufLUGEstimator <- function(TarCAObject,ObsLUG,DirOut="LEAPOutput/",NumS
 
       saveRDS(tmp.out,file=tmp.fileout)
     }else{
-      message(paste0("\tLoading: ",tmp.fileout))
+      fun.message("\tLoading: ",tmp.fileout,level=2)
       tmp.out <- readRDS(tmp.fileout)
     }
+    fun.message("--> Total ",sss," done in ",fun.secs(tmp.t),"s.",level=2)
     return(tmp.out)
   }) %>% bind_rows
 

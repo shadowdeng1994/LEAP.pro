@@ -45,6 +45,7 @@ fun.RunLUGEstimator <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",Top
     tmp.frac <- rowMeans(ExpreMatrix>0)
   }
   tmp.expMatrix <- ExpreMatrix[tmp.frac>TopGene,,drop=FALSE]
+  fun.message("--> Testing ",nrow(tmp.expMatrix)," expressed genes.",level=2)
 
   tmp.old <- fun.SetPlan(Threads)
   on.exit(future::plan(tmp.old),add=TRUE)
@@ -72,5 +73,5 @@ fun.RunLUGEstimator <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",Top
     }
   },Threads)
 
-  message("## Running LUG detector completed.")
+  fun.message("## Running LUG detector completed.")
 }

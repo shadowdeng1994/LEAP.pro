@@ -26,14 +26,22 @@ fun.ExtractLUG <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=
   }
 
   fun.message("--> Running LUG estimator.")
+  tmp.t <- Sys.time()
   fun.RunLUGEstimator(TarCAObject,ExpreMatrix,DirOut,TopGene,Threads,Redo,Assay,Layer)
+  fun.message("--> LUG estimator done in ",fun.secs(tmp.t),"s.")
+
+  tmp.t <- Sys.time()
   Var.Obs <- fun.LoadInLUGData(DirOut,Threads)
+  fun.message("--> Loaded ",nrow(Var.Obs)," observed LUGs in ",fun.secs(tmp.t),"s.",level=2)
 
   fun.message("--> Shuffling (",NumShuf,"times).")
+  tmp.t <- Sys.time()
   Var.Shuf <- fun.RunShufLUGEstimator(TarCAObject,Var.Obs,DirOut,NumShuf,SeedFrom,Threads,Redo)
+  fun.message("--> Shuffling done in ",fun.secs(tmp.t),"s.")
 
   fun.message("--> Extracting high confident LUGs.")
+  tmp.t <- Sys.time()
   Var.LUGs <- fun.DetLUG(Var.Obs,Var.Shuf,p_threshold,Threads)
-
+  fun.message("--> LUG detection done in ",fun.secs(tmp.t),"s. (",sum(Var.LUGs$Sig)," significant)")
   return(Var.LUGs)
 }
