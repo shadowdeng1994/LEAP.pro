@@ -10,12 +10,14 @@
 #' @param Redo Redo LUGs searching. (default: FALSE)
 #' @param Assay Assay of the Seurat object to use. (default: NULL, the default assay is used)
 #' @param Layer Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")
+#' @param Force Recompute genes whose `LUG/*.rds` already exists. (default: FALSE)
 #'
 #' @returns NULL.
 #' @export
 #'
 #' @examples fun.RunLUEEstimator(Data.TarCA,Var.TPM)
-fun.RunLUGEstimator <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=0.1,Threads=4,Redo=FALSE,Assay=NULL,Layer="data"){
+fun.RunLUGEstimator <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=0.1,Threads=4,Redo=FALSE,Assay=NULL,Layer="data",Force=FALSE){
+  Redo <- isTRUE(Redo)||isTRUE(Force)
   tmp.dirout <- paste0(DirOut,"/LUG/")
   if(!dir.exists(tmp.dirout)){ dir.create(tmp.dirout,recursive = T) }
 
@@ -45,17 +47,36 @@ fun.RunLUGEstimator <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",Top
     tmp.frac <- rowMeans(ExpreMatrix>0)
   }
   tmp.expMatrix <- ExpreMatrix[tmp.frac>TopGene,,drop=FALSE]
-  fun.message("--> Testing ",nrow(tmp.expMatrix)," expressed genes.",level=2)
 
-  tmp.old <- fun.SetPlan(Threads)
-  on.exit(future::plan(tmp.old),add=TRUE)
+  ## Release the full expression matrix and the filter vector early: otherwise
+  ## they stay alive in this frame for the whole (long) gene loop.
+  rm(ExpreMatrix,tmp.frac)
+  gc()
 
-  ## The worker is a package-level function so `future` serialises only it and
-  ## the (small) objects passed explicitly, instead of the whole calling frame
-  ## (which holds the full expression matrix / Seurat / TarCA object).
-  fun.ParLapply(rownames(tmp.expMatrix),fun.LUGEstimator_one,Threads,
-                expMatrix=tmp.expMatrix,NodeIndex=tmp.ni,TopGene=TopGene,
-                dirout=tmp.dirout,Redo=Redo)
+  ## Only (re)compute the genes that still need it; this also avoids exporting
+  ## the expression matrix when there is nothing to do.
+  tmp.genes <- rownames(tmp.expMatrix)
+  if(!Redo){ tmp.genes <- tmp.genes[!file.exists(paste0(tmp.dirout,"/",tmp.genes,".rds"))] }
+  fun.message("--> ",length(tmp.genes)," genes to compute (",
+              nrow(tmp.expMatrix)-length(tmp.genes)," cached).",level=2)
+
+  if(length(tmp.genes)>0){
+    tmp.todo <- tmp.expMatrix[tmp.genes,,drop=FALSE]
+    rm(tmp.expMatrix)
+    gc()
+
+    tmp.old <- fun.SetPlan(Threads)
+    on.exit(future::plan(tmp.old),add=TRUE)
+
+    ## The worker is a package-level function so `future` serialises only it and
+    ## the objects passed explicitly, instead of the whole calling frame (which
+    ## holds the full expression matrix / Seurat / TarCA object).
+    fun.ParLapply(tmp.genes,fun.LUGEstimator_one,Threads,
+                  expMatrix=tmp.todo,NodeIndex=tmp.ni,TopGene=TopGene,
+                  dirout=tmp.dirout,Redo=TRUE)
+    rm(tmp.todo)
+    gc()
+  }
 
   fun.message("## Running LUG detector completed.")
 }

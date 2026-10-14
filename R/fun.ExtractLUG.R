@@ -13,13 +13,14 @@
 #' @param Redo Redo LUGs searching. (default: FALSE)
 #' @param Assay Assay of the Seurat object to use. (default: NULL, the default assay is used)
 #' @param Layer Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")
+#' @param Force Recompute cached files (per-gene `LUG/*.rds` and `Shuffle/*.rds`) instead of skipping them. (default: FALSE)
 #'
 #' @returns A dataframe of inferred LUGs.
 #' @export
 #'
 #' @examples Data.TarCA <- CreateTarCAObject(Var.Tree,Var.Ann)
 #' @examples Var.LUGs <- fun.ExtractLUG(Data.TarCA,Var.TPM)
-fun.ExtractLUG <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=0.1,NumShuf=1000,p_threshold=0.01,SeedFrom=NULL,Threads=4,Redo=FALSE,Assay=NULL,Layer="data"){
+fun.ExtractLUG <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=0.1,NumShuf=1000,p_threshold=0.01,SeedFrom=NULL,Threads=4,Redo=FALSE,Assay=NULL,Layer="data",Force=FALSE){
   if(!dir.exists(DirOut)){
     fun.message("--> ",DirOut,"is absent. Creating.")
     dir.create(DirOut)
@@ -27,7 +28,7 @@ fun.ExtractLUG <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=
 
   fun.message("--> Running LUG estimator.")
   tmp.t <- Sys.time()
-  fun.RunLUGEstimator(TarCAObject,ExpreMatrix,DirOut,TopGene,Threads,Redo,Assay,Layer)
+  fun.RunLUGEstimator(TarCAObject,ExpreMatrix,DirOut,TopGene,Threads,Redo,Assay,Layer,Force)
   fun.message("--> LUG estimator done in ",fun.secs(tmp.t),"s.")
 
   tmp.t <- Sys.time()
@@ -36,7 +37,7 @@ fun.ExtractLUG <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=
 
   fun.message("--> Shuffling (",NumShuf,"times).")
   tmp.t <- Sys.time()
-  Var.Shuf <- fun.RunShufLUGEstimator(TarCAObject,Var.Obs,DirOut,NumShuf,SeedFrom,Threads,Redo)
+  Var.Shuf <- fun.RunShufLUGEstimator(TarCAObject,Var.Obs,DirOut,NumShuf,SeedFrom,Threads,Redo,Force)
   fun.message("--> Shuffling done in ",fun.secs(tmp.t),"s.")
 
   fun.message("--> Extracting high confident LUGs.")

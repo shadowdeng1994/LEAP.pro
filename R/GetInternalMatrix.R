@@ -18,6 +18,7 @@
 #' @param Assay Assay of the Seurat object to use. (default: NULL, the default assay is used)
 #' @param Layer Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")
 #' @param OnlyLUG If TRUE, run only the LUG-extraction step and return the LUGs (skip PhyloDepth conversion and internal-state inference). (default: FALSE)
+#' @param Force Recompute cached files (per-gene `LUG/*.rds` and `Shuffle/*.rds`) instead of skipping them. (default: FALSE)
 #'
 #' @returns A matrix of inferred transcriptome of internal nodes, or a dataframe of LUGs when `OnlyLUG = TRUE`.
 #' @export
@@ -26,7 +27,7 @@
 #' @examples Var.InternalState <- GetInternalMatrix(Data.TarCA,Var.TPM)
 #' @examples Var.LUGs <- GetInternalMatrix(Data.TarCA,Var.TPM,OnlyLUG=TRUE)
 #' @examples Var.InternalState <- GetInternalMatrix(Data.TarCA,LUGs=c("GeneA","GeneB"))
-GetInternalMatrix <- function(TarCAObject=NULL,ExpreMatrix=NULL,LUGs=NULL,PhyloDepth=NULL,DirOut="LEAPOutput/",TopGene=0.1,NumShuf=1000,p_threshold=0.01,MinAct=3,SeedFrom=NULL,Threads=4,SaveObject=TRUE,Redo=FALSE,Assay=NULL,Layer="data",OnlyLUG=FALSE){
+GetInternalMatrix <- function(TarCAObject=NULL,ExpreMatrix=NULL,LUGs=NULL,PhyloDepth=NULL,DirOut="LEAPOutput/",TopGene=0.1,NumShuf=1000,p_threshold=0.01,MinAct=3,SeedFrom=NULL,Threads=4,SaveObject=TRUE,Redo=FALSE,Assay=NULL,Layer="data",OnlyLUG=FALSE,Force=FALSE){
   tmp.t0 <- Sys.time()
 
   ## accept a plain character vector of gene symbols as the LUG set
@@ -39,11 +40,15 @@ GetInternalMatrix <- function(TarCAObject=NULL,ExpreMatrix=NULL,LUGs=NULL,PhyloD
   if(is.null(Var.LUGs)){
     fun.message("==> Extracting LUG.")
     tmp.t <- Sys.time()
-    Var.LUGs <- fun.ExtractLUG(TarCAObject,ExpreMatrix,DirOut,TopGene,NumShuf,p_threshold,SeedFrom,Threads,Redo,Assay,Layer)
+    Var.LUGs <- fun.ExtractLUG(TarCAObject,ExpreMatrix,DirOut,TopGene,NumShuf,p_threshold,SeedFrom,Threads,Redo,Assay,Layer,Force)
     fun.message("==> Extracting LUG done in ",fun.secs(tmp.t),"s.")
   }else{
     fun.message("==> Using supplied LUGs (",nrow(Var.LUGs)," genes); skipping LUG estimation.")
   }
+
+  ## the expression matrix is not needed beyond LUG extraction
+  if(exists("ExpreMatrix")){ rm(ExpreMatrix) }
+  gc()
 
   ## only run the LUG step and return it
   if(OnlyLUG){

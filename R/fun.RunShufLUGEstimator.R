@@ -7,12 +7,14 @@
 #' @param SeedFrom Set the beginning of seed. (default: NULL)
 #' @param Threads Number of cores. (default: 4)
 #' @param Redo Redo LUGs searching. (default: FALSE)
+#' @param Force Recompute cached `Shuffle/Total_*.rds` files instead of skipping them. (default: FALSE)
 #'
 #' @returns A dataframe of shuffling LUGs.
 #' @export
 #'
 #' @examples Var.Shuf <- fun.RunShufLUGEstimator(Data.TarCA,Var.Obs)
-fun.RunShufLUGEstimator <- function(TarCAObject,ObsLUG,DirOut="LEAPOutput/",NumShuf=1000,SeedFrom=NULL,Threads=4,Redo=FALSE){
+fun.RunShufLUGEstimator <- function(TarCAObject,ObsLUG,DirOut="LEAPOutput/",NumShuf=1000,SeedFrom=NULL,Threads=4,Redo=FALSE,Force=FALSE){
+  Redo <- isTRUE(Redo)||isTRUE(Force)
   tmp.dirout <- paste0(DirOut,"/Shuffle/")
   if(!dir.exists(tmp.dirout)){ dir.create(tmp.dirout,recursive = T) }
 

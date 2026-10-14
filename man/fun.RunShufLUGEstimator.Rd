@@ -11,7 +11,8 @@ fun.RunShufLUGEstimator(
   NumShuf = 1000,
   SeedFrom = NULL,
   Threads = 4,
-  Redo = FALSE
+  Redo = FALSE,
+  Force = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ fun.RunShufLUGEstimator(
 \item{Threads}{Number of cores. (default: 4)}
 
 \item{Redo}{Redo LUGs searching. (default: FALSE)}
+
+\item{Force}{Recompute cached \code{Shuffle/Total_*.rds} files instead of skipping them. (default: FALSE)}
 }
 \value{
 A dataframe of shuffling LUGs.

@@ -20,7 +20,8 @@ GetInternalMatrix(
   Redo = FALSE,
   Assay = NULL,
   Layer = "data",
-  OnlyLUG = FALSE
+  OnlyLUG = FALSE,
+  Force = FALSE
 )
 }
 \arguments{
@@ -55,6 +56,8 @@ GetInternalMatrix(
 \item{Layer}{Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")}
 
 \item{OnlyLUG}{If TRUE, run only the LUG-extraction step and return the LUGs (skip PhyloDepth conversion and internal-state inference). (default: FALSE)}
+
+\item{Force}{Recompute cached files (per-gene \verb{LUG/*.rds} and \verb{Shuffle/*.rds}) instead of skipping them. (default: FALSE)}
 }
 \value{
 A matrix of inferred transcriptome of internal nodes, or a dataframe of LUGs when \code{OnlyLUG = TRUE}.

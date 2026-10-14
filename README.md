@@ -318,8 +318,10 @@ For example, `GetInternalMatrix` prints the time of each sub-step, and at level
   reference** so the two binarized matrices are comparable (default `0.1`;
   smaller is stricter, larger is more permissive).
 - **`DirOut`** is where results and the cached `LUG/` and `Shuffle/` files are
-  written. Use the same `DirOut` across steps so the caches can be reused
-  (`Redo = FALSE`).
+  written. Use the same `DirOut` across steps so the caches can be reused.
+- Already-computed `LUG/*.rds` and `Shuffle/*.rds` are **skipped by default**;
+  set **`Force = TRUE`** to recompute them (e.g. after changing `TopGene` or
+  `SeedFrom`). `Redo` is kept as an alias for `Force`.
 
 ## Contributing
 ### Contributors

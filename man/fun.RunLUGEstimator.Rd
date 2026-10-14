@@ -12,7 +12,8 @@ fun.RunLUGEstimator(
   Threads = 4,
   Redo = FALSE,
   Assay = NULL,
-  Layer = "data"
+  Layer = "data",
+  Force = FALSE
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ phylogeny, or a Seurat object whose cells match the tree tips.}
 \item{Assay}{Assay of the Seurat object to use. (default: NULL, the default assay is used)}
 
 \item{Layer}{Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")}
+
+\item{Force}{Recompute genes whose \verb{LUG/*.rds} already exists. (default: FALSE)}
 }
 \value{
 NULL.

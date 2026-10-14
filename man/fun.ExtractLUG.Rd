@@ -15,7 +15,8 @@ fun.ExtractLUG(
   Threads = 4,
   Redo = FALSE,
   Assay = NULL,
-  Layer = "data"
+  Layer = "data",
+  Force = FALSE
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ fun.ExtractLUG(
 \item{Assay}{Assay of the Seurat object to use. (default: NULL, the default assay is used)}
 
 \item{Layer}{Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")}
+
+\item{Force}{Recompute cached files (per-gene \verb{LUG/*.rds} and \verb{Shuffle/*.rds}) instead of skipping them. (default: FALSE)}
 }
 \value{
 A dataframe of inferred LUGs.
