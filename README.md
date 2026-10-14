@@ -41,7 +41,7 @@ pak::pkg_install("shadowdeng1994/LEAP.pro")
 ### 1. Load packages
 
 ```r
-library(LEAP)
+library(LEAP.pro)
 library(TarCA.pro)
 library(parallel)
 library(Seurat)

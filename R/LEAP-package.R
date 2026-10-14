@@ -1,4 +1,10 @@
-#' LEAP: LUG-Encoded Ancestral Projection
+utils::globalVariables(c(
+  "predicted.id","TransLabel","AncLabel","isTip","isRoot","Total",".",
+  "Np","EmpiricalP","TipLabel","Nor_x","Symbol","Node","Node_x","Symbol_x","isAct",
+  "Sig","TipAnn","N",".N"
+))
+
+#' LEAP.pro: LUG-Encoded Ancestral Projection
 #'
 #' A phylogeny-based computational framework for inferring the transcriptional
 #' states of internal nodes from cell phylogenies via lineage-specific
@@ -16,9 +22,4 @@
 #' @importFrom parallel mclapply
 #' @importFrom stats median setNames p.adjust pchisq
 #' @importFrom utils flush.console
-utils::globalVariables(c(
-  "predicted.id","TransLabel","AncLabel","isTip","isRoot","Total",".",
-  "Np","EmpiricalP","TipLabel","Nor_x","Symbol","Node","Node_x","Symbol_x","isAct",
-  "Sig","TipAnn","N",".N"
-))
 "_PACKAGE"
