@@ -1,6 +1,8 @@
 # LUG-Encoded Ancestral Projection (LEAP)
 
- A phylogeny-based computational framework for inferring the transcriptional states of unobserved internal nodes from cell phylogenies via lineage-specific upregulated genes (LUGs).
+**Package:** `LEAP.pro` — an R implementation of LEAP (maintained separately from the `LEAP` package).
+
+A phylogeny-based computational framework for inferring the transcriptional states of unobserved internal nodes from cell phylogenies via lineage-specific upregulated genes (LUGs).
 
 ## Overview
 
@@ -13,15 +15,15 @@ The method facilitates the discovery of subtle fate specializations and hidden d
 ## Installation
 
 The non-CRAN dependency [TarCA.pro](https://github.com/shadowdeng1994/TarCA.pro)
-is resolved automatically via the `Remotes` field, so LEAP can be installed in a
-single step with [pak](https://pak.r-lib.org/):
+is resolved automatically via the `Remotes` field, so `LEAP.pro` can be installed
+in a single step with [pak](https://pak.r-lib.org/):
 
 ```r
 # install.packages("pak")
 pak::pkg_install("shadowdeng1994/LEAP.pro")
 ```
 
-Alternatively, install the dependency explicitly before LEAP:
+Alternatively, install the dependency explicitly before `LEAP.pro`:
 
 ```r
 pak::pkg_install("shadowdeng1994/TarCA.pro")
@@ -36,13 +38,6 @@ pak::pkg_install("shadowdeng1994/LEAP.pro")
 - future, future.apply (parallel backend), matrixStats, Matrix, ape
 - Seurat
 
-The `Threads` argument runs the gene- and permutation-level steps through a
-`future` **multisession** plan (works on Windows, macOS and Linux, and avoids
-the fork-related failures of `parallel::mclapply` inside RStudio). If you set
-your own `future::plan()` beforehand it is respected; otherwise the package
-uses a multisession plan with `Threads` workers and restores the previous plan
-afterwards.
-
 ## Workflow
 
 ### 1. Load packages
@@ -50,8 +45,18 @@ afterwards.
 ```r
 library(LEAP.pro)
 library(TarCA.pro)
-library(parallel)
+library(future)
 library(Seurat)
+```
+
+**Parallelism.** Pass `Threads` to the functions below; each call runs its gene-
+and permutation-level work on a `future` **multisession** backend with that many
+workers (works on Windows, macOS and Linux, and avoids the fork-related failures
+of `parallel::mclapply` inside RStudio). Alternatively, set your own plan once,
+which then takes precedence over `Threads`:
+
+```r
+future::plan(future::multisession, workers = 8)
 ```
 
 ### 2. Load demo data
