@@ -59,6 +59,29 @@ which then takes precedence over `Threads`:
 future::plan(future::multisession, workers = 8)
 ```
 
+**Large datasets (`future.globals.maxSize`).** With `multisession`, the objects a
+worker needs are *copied* to the workers, so a large query/reference matrix can
+exceed `future`'s default 500 MiB limit and raise
+`Error ... The total size of the ... globals ... exceeds the maximum allowed size 500.00 MiB`.
+Estimate the largest object that will be exported and raise the limit before
+calling the analysis functions:
+
+```r
+# size of the biggest object sent to the workers (e.g. the expression matrix)
+format(object.size(Var.Expression), units = "MiB")
+# a dense genes x cells matrix is about nrow(Var.Expression) * ncol(Var.Expression) * 8 bytes;
+# for a sparse (dgCMatrix) input use object.size() directly, or vapply over a few genes
+
+options(future.globals.maxSize = 2 * 1024^3)   # 2 GiB: set to ~1.5-2x the largest exported object
+# only if you are certain the transfer is intended:
+options(future.globals.maxSize = Inf)
+```
+
+The option must be set **before** calling `GetInternalMatrix()` /
+`GetReferenceMatrix()`. For very large data on Linux/macOS, `future::plan(future::multicore)`
+shares memory between workers instead of copying it, but `multicore` forks and can
+hit the same RStudio issues as `parallel::mclapply`.
+
 ### 2. Load demo data
 
 Demo data can be downloaded from [LEAP_sourcedata](https://github.com/shadowdeng1994/LEAP_sourcedata). It includes:
