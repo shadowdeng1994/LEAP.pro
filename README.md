@@ -75,13 +75,14 @@ This is the core step of LEAP. It performs three sub-steps automatically:
 2. **Phylogenetic depth conversion** — maps LUG activation events onto the phylogenetic depth of internal nodes
 3. **Internal state inference** — reconstructs the binarized transcriptome of each internal node
 
-The permutation test uses `SeedFrom` to make the empirical P-values reproducible; leave it `NULL` (default) to use random seeds.
+The permutation test uses `SeedFrom` to make the empirical P-values reproducible; leave it `NULL` (default) to use random seeds. Results are written to `DirOut` (default `"LEAPOutput/"`, created automatically); use the same `DirOut` across steps so the cached `LUG/` and `Shuffle/` files can be reused.
 
 ```r
 Var.InternalMatrix <- GetInternalMatrix(
   Data.TarCA,
   Var.Expression,
-  SeedFrom = 1,   # set (any integer) for reproducible LUG detection
+  SeedFrom = 1,            # set (any integer) for reproducible LUG detection
+  DirOut = "MyOutput/",    # output directory (created if missing)
   Threads = 90,
   SaveObject = TRUE
 )
@@ -98,6 +99,7 @@ Var.ReferenceMatrix <- GetReferenceMatrix(
   Data.Ref_Expression[tmp.overlapLUG, ],
   Data.Ref_metadata,
   GroupBy = "embryo.time.bin",
+  DirOut = "MyOutput/",
   Threads = 90,
   SaveObject = TRUE
 )
@@ -124,6 +126,7 @@ Var.Predictions <- RunLabelTransfer(
   Var.InternalMatrix,
   Var.ReferenceMatrix,
   tmp.Label,
+  DirOut = "MyOutput/",
   SaveObject = TRUE
 )
 ```
@@ -137,6 +140,7 @@ Var.PredictedState <- GetPredictedState(
   Data.TarCA,
   Var.Predictions,
   RemoveRoot = "Root",
+  DirOut = "MyOutput/",
   SaveObject = TRUE
 )
 ```
@@ -156,7 +160,7 @@ Var.PredictedState <- GetPredictedState(
 
 ## Output
 
-All results are saved to the `LEAPOutput/` directory when `SaveObject = TRUE`:
+All results are saved to the directory given by `DirOut` (default `"LEAPOutput/"`, created automatically) when `SaveObject = TRUE`:
 
 - `Var.LUGs.rds` — detected lineage-specific upregulated genes with empirical P-values
 - `Var.PhyloDepthOfLUGs.rds` — phylogenetic depth of LUG activation events
