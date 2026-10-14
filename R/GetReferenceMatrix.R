@@ -2,19 +2,33 @@
 #' @description
 #' Convert reference dataset into binarized matrix.
 #'
-#' @param ExpreMatrix A matrix of expression levels corresponding to the reference atlas.
-#' @param Metadata A dataframe containing metadata for each reference cell.
+#' @param ExpreMatrix A matrix of expression levels corresponding to the reference atlas, or a Seurat object.
+#' @param Metadata A dataframe containing metadata for each reference cell. Optional when `ExpreMatrix` is a Seurat object (the object's metadata is used).
 #' @param GroupBy Column name used to group reference data. (default: NULL)
 #' @param TopGene Threshold of highly expressed population. (default: 0.1)
 #' @param Threads Number of cores. (default: 4)
 #' @param DirOut Path to saving the LUG object. (default: "LEAPOutput/")
 #' @param SaveObject Saving all objects. (default: TRUE)
+#' @param Assay Assay of the Seurat object to use. (default: NULL, the default assay is used)
+#' @param Layer Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")
 #'
 #' @returns A binarized matrix of reference data.
 #' @export
 #'
 #' @examples GetReferenceMatrix(Data.Ref_Count,Data.Ref_metadata,GroupBy="embryo.time.bin")
-GetReferenceMatrix <- function(ExpreMatrix,Metadata,GroupBy=NULL,TopGene=0.1,Threads=4,DirOut="LEAPOutput/",SaveObject=TRUE){
+#' @examples GetReferenceMatrix(RefSeurat,GroupBy="embryo.time.bin")
+GetReferenceMatrix <- function(ExpreMatrix,Metadata=NULL,GroupBy=NULL,TopGene=0.1,Threads=4,DirOut="LEAPOutput/",SaveObject=TRUE,Assay=NULL,Layer="data"){
+  ## A Seurat object carries both the expression matrix and the cell metadata,
+  ## so it can be passed on its own.
+  if(inherits(ExpreMatrix,"Seurat")){
+    fun.message("--> Extracting expression matrix and metadata from Seurat object.")
+    if(is.null(Metadata)){ Metadata <- ExpreMatrix[[]] }
+    ExpreMatrix <- fun.GetExpreMatrix(ExpreMatrix,Assay,Layer)
+  }
+  if(is.null(Metadata)){
+    stop("`Metadata` is required when `ExpreMatrix` is not a Seurat object.")
+  }
+
   if(!is.null(GroupBy)){
     tmp.set <- split(x=rownames(Metadata),f=Metadata[,GroupBy])
   }else{

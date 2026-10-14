@@ -75,14 +75,31 @@ This is the core step of LEAP. It performs three sub-steps automatically:
 2. **Phylogenetic depth conversion** — maps LUG activation events onto the phylogenetic depth of internal nodes
 3. **Internal state inference** — reconstructs the binarized transcriptome of each internal node
 
-The permutation test uses `SeedFrom` to make the empirical P-values reproducible; leave it `NULL` (default) to use random seeds. Results are written to `DirOut` (default `"LEAPOutput/"`, created automatically); use the same `DirOut` across steps so the cached `LUG/` and `Shuffle/` files can be reused.
+The permutation test uses `SeedFrom` to make the empirical P-values reproducible; leave it `NULL` (default) to use random seeds. `TopGene` is the top fraction of cells (within each group) treated as "highly expressed" when binarizing; use the **same value for the query and the reference** so the two binarized matrices are comparable (default `0.1`; smaller is stricter, larger is more permissive). Results are written to `DirOut` (default `"LEAPOutput/"`, created automatically); use the same `DirOut` across steps so the cached `LUG/` and `Shuffle/` files can be reused.
 
 ```r
 Var.InternalMatrix <- GetInternalMatrix(
   Data.TarCA,
   Var.Expression,
+  TopGene = 0.1,           # top fraction of cells binarized as "expressed" (default 0.1)
   SeedFrom = 1,            # set (any integer) for reproducible LUG detection
   DirOut = "MyOutput/",    # output directory (created if missing)
+  Threads = 90,
+  SaveObject = TRUE
+)
+```
+
+`ExpreMatrix` can also be a **Seurat object** whose cells match the tree tips (extra cells are dropped; missing tips raise an error). Pick the assay and layer/slot with `Assay` and `Layer`:
+
+```r
+Var.InternalMatrix <- GetInternalMatrix(
+  Data.TarCA,
+  QuerySeurat,             # a Seurat object (cells aligned to Data.TarCA$Tree$tip.label)
+  Assay = "RNA",           # assay to use (default: DefaultAssay(QuerySeurat))
+  Layer = "data",          # Seurat >= 5 layer, e.g. "data"/"counts"; older Seurat uses the matching slot
+  TopGene = 0.1,
+  SeedFrom = 1,
+  DirOut = "MyOutput/",
   Threads = 90,
   SaveObject = TRUE
 )
@@ -99,6 +116,24 @@ Var.ReferenceMatrix <- GetReferenceMatrix(
   Data.Ref_Expression[tmp.overlapLUG, ],
   Data.Ref_metadata,
   GroupBy = "embryo.time.bin",
+  TopGene = 0.1,           # must match the query's TopGene
+  DirOut = "MyOutput/",
+  Threads = 90,
+  SaveObject = TRUE
+)
+```
+
+`ExpreMatrix` can instead be a **Seurat object**; its metadata (`obj[[]]`) is then used automatically and `Metadata` can be omitted. Subset to the same LUG genes first, and choose the data with `Assay`/`Layer`:
+
+```r
+RefSeurat <- subset(RefSeurat, features = intersect(rownames(Var.InternalMatrix), rownames(RefSeurat)))
+
+Var.ReferenceMatrix <- GetReferenceMatrix(
+  RefSeurat,               # a Seurat object
+  GroupBy = "embryo.time.bin",  # a column of RefSeurat's metadata
+  Assay = "RNA",           # assay to use (default: DefaultAssay(RefSeurat))
+  Layer = "data",          # Seurat >= 5 layer, e.g. "data"/"counts"; older Seurat uses the matching slot
+  TopGene = 0.1,
   DirOut = "MyOutput/",
   Threads = 90,
   SaveObject = TRUE

@@ -6,18 +6,20 @@
 \usage{
 GetReferenceMatrix(
   ExpreMatrix,
-  Metadata,
+  Metadata = NULL,
   GroupBy = NULL,
   TopGene = 0.1,
   Threads = 4,
   DirOut = "LEAPOutput/",
-  SaveObject = TRUE
+  SaveObject = TRUE,
+  Assay = NULL,
+  Layer = "data"
 )
 }
 \arguments{
-\item{ExpreMatrix}{A matrix of expression levels corresponding to the reference atlas.}
+\item{ExpreMatrix}{A matrix of expression levels corresponding to the reference atlas, or a Seurat object.}
 
-\item{Metadata}{A dataframe containing metadata for each reference cell.}
+\item{Metadata}{A dataframe containing metadata for each reference cell. Optional when \code{ExpreMatrix} is a Seurat object (the object's metadata is used).}
 
 \item{GroupBy}{Column name used to group reference data. (default: NULL)}
 
@@ -28,6 +30,10 @@ GetReferenceMatrix(
 \item{DirOut}{Path to saving the LUG object. (default: "LEAPOutput/")}
 
 \item{SaveObject}{Saving all objects. (default: TRUE)}
+
+\item{Assay}{Assay of the Seurat object to use. (default: NULL, the default assay is used)}
+
+\item{Layer}{Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")}
 }
 \value{
 A binarized matrix of reference data.
@@ -37,4 +43,5 @@ Convert reference dataset into binarized matrix.
 }
 \examples{
 GetReferenceMatrix(Data.Ref_Count,Data.Ref_metadata,GroupBy="embryo.time.bin")
+GetReferenceMatrix(RefSeurat,GroupBy="embryo.time.bin")
 }
