@@ -20,6 +20,9 @@ fun.RunShufLUGEstimator <- function(TarCAObject,ObsLUG,DirOut="LEAPOutput/",NumS
   if(is.null(tmp.ni)){ stop("TarCAObject lacks 'NodeIndex'; recreate it with CreateTarCAObject().") }
   tmp.ntip <- tmp.ni$ntip
 
+  tmp.old <- fun.SetPlan(Threads)
+  on.exit(future::plan(tmp.old),add=TRUE)
+
   tmp.set <- ObsLUG %>% .$Total %>% unique %>% sort
   tmp.shuf <-
   tmp.set %>%
@@ -36,10 +39,12 @@ fun.RunShufLUGEstimator <- function(TarCAObject,ObsLUG,DirOut="LEAPOutput/",NumS
       tmp.totidx <- match(sss,tmp.set)
 
       tmp.out <-
-        1:NumShuf %>%
-        mclapply(mc.cores = Threads,function(rrr){
+        fun.ParLapply(1:NumShuf,function(rrr){
           if(!is.null(SeedFrom)){
-            set.seed(SeedFrom + (tmp.totidx-1L)*NumShuf + rrr)
+            ## Pin the RNG kind/sample kind so the stream is identical whether
+            ## the workers run sequential or as future multisession processes.
+            set.seed(SeedFrom + (tmp.totidx-1L)*NumShuf + rrr,
+                     kind="Mersenne-Twister",sample.kind="Rejection")
           }
           tmp.ann <- sample(1:tmp.ntip)<=sss
           tmp.res <- fun.LEU_Estimator(tmp.ni,tmp.ann)
@@ -49,7 +54,7 @@ fun.RunShufLUGEstimator <- function(TarCAObject,ObsLUG,DirOut="LEAPOutput/",NumS
             tmp.res <- tmp.res$LEU_Estimator
           }
           return(tmp.res)
-        }) %>% bind_rows
+        },Threads) %>% bind_rows
 
       saveRDS(tmp.out,file=tmp.fileout)
     }else{

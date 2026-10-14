@@ -8,12 +8,14 @@
 #'
 #' @examples Var.Obs <- fun.LoadInLUGData()
 fun.LoadInLUGData <- function(DirOut="LEAPOutput/",Threads=4){
+  tmp.old <- fun.SetPlan(Threads)
+  on.exit(future::plan(tmp.old),add=TRUE)
+
   tmp.ObsLUG <-
     dir(paste0(DirOut,"/LUG/")) %>%
-    mclapply(mc.cores = Threads,function(ggg){
-      message(paste0(DirOut,"/LUG/",ggg))
+    fun.ParLapply(function(ggg){
       readRDS(paste0(DirOut,"/LUG/",ggg)) %>% .$LEU_Estimator %>% mutate(Symbol=sub("\\.rds$","",ggg))
-    }) %>% bind_rows
+    },Threads) %>% bind_rows
 
   return(tmp.ObsLUG)
 }

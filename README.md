@@ -33,8 +33,15 @@ pak::pkg_install("shadowdeng1994/LEAP.pro")
 - R (>= 4.0.0)
 - [TarCA.pro](https://github.com/shadowdeng1994/TarCA.pro) (tree/ExTree construction)
 - dplyr, tidyr, tibble, magrittr, data.table
-- parallel, matrixStats, Matrix, ape
+- future, future.apply (parallel backend), matrixStats, Matrix, ape
 - Seurat
+
+The `Threads` argument runs the gene- and permutation-level steps through a
+`future` **multisession** plan (works on Windows, macOS and Linux, and avoids
+the fork-related failures of `parallel::mclapply` inside RStudio). If you set
+your own `future::plan()` beforehand it is respected; otherwise the package
+uses a multisession plan with `Threads` workers and restores the previous plan
+afterwards.
 
 ## Workflow
 

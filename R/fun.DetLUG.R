@@ -10,13 +10,16 @@
 #'
 #' @examples Var.LUGs <- fun.DetLUG(Var.Obs,Var.Shuf)
 fun.DetLUG <- function(ObsLUG,ShufLUG,p_threshold=0.01,Threads=4){
+  tmp.old <- fun.SetPlan(Threads)
+  on.exit(future::plan(tmp.old),add=TRUE)
+
   Var.LUGs <-
   1:nrow(ObsLUG) %>%
-  mclapply(mc.cores = Threads,function(iii){
+  fun.ParLapply(function(iii){
     tmp1 <- ObsLUG[iii,]
     tmp2 <- ShufLUG %>% filter(Total==ObsLUG$Total[iii]) %>% .$Np
     tmp1 %>% mutate(EmpiricalP=if(length(tmp2)==0){ NA_real_ }else{ mean(tmp2<=Np) })
-  }) %>% bind_rows %>%
+  },Threads) %>% bind_rows %>%
   mutate(Sig=!is.na(EmpiricalP)&EmpiricalP<p_threshold) %>%
   arrange(EmpiricalP)
 

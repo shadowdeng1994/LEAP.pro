@@ -22,9 +22,12 @@ fun.GetPhyloDepthOfLUGs <- function(TarCAObject,LUG,DirOut="LEAPOutput/",Threads
   tmp.tout <- tmp.ni$tout; names(tmp.tout) <- tmp.ni$label
   tmp.tipLabels <- tmp.ni$label[tmp.ni$isTip]
 
+  tmp.old <- fun.SetPlan(Threads)
+  on.exit(future::plan(tmp.old),add=TRUE)
+
   Var.PhyloDepthOfLUGs <-
   LUG %>% filter(Sig) %>% .$Symbol %>%
-  mclapply(mc.cores = Threads,function(ggg){
+  fun.ParLapply(function(ggg){
     tmp1 <- readRDS(paste0(DirOut,"/LUG/",ggg,".rds"))
 
     tmp.fbp <- tmp1$FilterBiasParent
@@ -65,7 +68,7 @@ fun.GetPhyloDepthOfLUGs <- function(TarCAObject,LUG,DirOut="LEAPOutput/",Threads
       Symbol=ggg,
       stringsAsFactors=FALSE
     )
-  }) %>% bind_rows
+  },Threads) %>% bind_rows
 
   return(Var.PhyloDepthOfLUGs)
 }

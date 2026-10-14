@@ -46,8 +46,10 @@ fun.RunLUGEstimator <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",Top
   }
   tmp.expMatrix <- ExpreMatrix[tmp.frac>TopGene,,drop=FALSE]
 
-  rownames(tmp.expMatrix) %>%
-  mclapply(mc.cores = Threads,function(ggg){
+  tmp.old <- fun.SetPlan(Threads)
+  on.exit(future::plan(tmp.old),add=TRUE)
+
+  fun.ParLapply(rownames(tmp.expMatrix),function(ggg){
     tmp.fileout <- paste0(tmp.dirout,"/",ggg,".rds")
     if(!file.exists(tmp.fileout)|Redo){
       tmp.ann <- percent_rank(as.numeric(tmp.expMatrix[ggg,]))>(1-TopGene)
@@ -68,7 +70,7 @@ fun.RunLUGEstimator <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",Top
       saveRDS(tmp.res,file=tmp.fileout)
       return()
     }
-  })
+  },Threads)
 
   message("## Running LUG detector completed.")
 }

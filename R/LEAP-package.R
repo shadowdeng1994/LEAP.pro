@@ -19,7 +19,6 @@ utils::globalVariables(c(
 #' @importFrom tibble column_to_rownames
 #' @importFrom magrittr %>%
 #' @importFrom Seurat CreateSeuratObject FindTransferAnchors TransferData NormalizeData ScaleData RunPCA RunUMAP
-#' @importFrom parallel mclapply
 #' @importFrom stats median setNames p.adjust pchisq
 #' @importFrom utils flush.console
 "_PACKAGE"
