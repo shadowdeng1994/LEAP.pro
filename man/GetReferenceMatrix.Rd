@@ -36,7 +36,7 @@ GetReferenceMatrix(
 \item{Layer}{Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")}
 }
 \value{
-A binarized matrix of reference data.
+A binarized sparse matrix (\code{dgCMatrix}) of reference data.
 }
 \description{
 Convert reference dataset into binarized matrix.

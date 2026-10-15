@@ -12,7 +12,7 @@
 #' @param Assay Assay of the Seurat object to use. (default: NULL, the default assay is used)
 #' @param Layer Layer (Seurat >= 5) or slot (Seurat < 5) of the Seurat object to use. (default: "data")
 #'
-#' @returns A binarized matrix of reference data.
+#' @returns A binarized sparse matrix (`dgCMatrix`) of reference data.
 #' @export
 #'
 #' @examples GetReferenceMatrix(Data.Ref_Count,Data.Ref_metadata,GroupBy="embryo.time.bin")
@@ -52,7 +52,11 @@ GetReferenceMatrix <- function(ExpreMatrix,Metadata=NULL,GroupBy=NULL,TopGene=0.
     tmp.pct <- (tmp3-1)/(tmp.n-1)
     ## a group with a single cell gives 0/0 = NaN; treat it as "not expressed"
     tmp.pct[is.nan(tmp.pct)] <- 0
-    tmp3 <- as.data.frame((tmp.pct > (1-TopGene))*1)
+    ## Keep each binarized group sparse (a gene retains only ~TopGene of the
+    ## cells). `Matrix()` on a logical matrix returns a logical sparse matrix;
+    ## coercing to "dMatrix" yields a numeric dgCMatrix (1 = retained) that can
+    ## be used directly as a Seurat `counts` matrix.
+    tmp3 <- methods::as(Matrix::Matrix(tmp.pct > (1-TopGene),sparse=TRUE),"dMatrix")
     dimnames(tmp3) <- dimnames(tmp.mat)
 
     fun.message("--> Group ",ttt," done in ",fun.secs(tmp.t),"s.",level=2)
@@ -66,7 +70,9 @@ GetReferenceMatrix <- function(ExpreMatrix,Metadata=NULL,GroupBy=NULL,TopGene=0.
       stop("Inconsistent feature order across groups.")
     }
   }
-  Var.RefMatrix <- bind_cols(tmp.list)
+  ## `cbind` keeps the group matrices sparse; `dplyr::bind_cols` would coerce
+  ## them back to a dense data.frame.
+  Var.RefMatrix <- do.call(cbind,tmp.list)
 
   if(SaveObject){
     fun.message("==> Saving to ",DirOut,".")

@@ -32,6 +32,7 @@ Imports:
     future.apply,
     matrixStats,
     Matrix,
+    methods,
     data.table,
     Seurat
 Suggests: 

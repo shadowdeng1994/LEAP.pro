@@ -169,8 +169,8 @@ All results are saved to the directory given by `DirOut` (default `"LEAPOutput/"
 
 - `Var.LUGs.rds` — detected lineage-specific upregulated genes with empirical P-values
 - `Var.PhyloDepthOfLUGs.rds` — phylogenetic depth of LUG activation events
-- `Var.InternalState.rds` — reconstructed binarized transcriptome of internal nodes
-- `Var.RefMatrix.rds` — binarized reference matrix
+- `Var.InternalState.rds` — reconstructed binarized transcriptome of internal nodes (sparse `dgCMatrix`)
+- `Var.RefMatrix.rds` — binarized reference matrix (sparse `dgCMatrix`)
 - `Var.QuerySeurat.rds` / `Var.RefSeurat.rds` — Seurat objects for query and reference
 - `Var.Anchors.rds` — transfer anchors
 - `Var.Predictions.rds` — label transfer predictions
