@@ -30,7 +30,7 @@ GetInternalMatrix(
 
 \item{ExpreMatrix}{A matrix of expression levels corresponding to the cell phylogeny, or a Seurat object whose cells match the tree tips. (default: NULL)}
 
-\item{LUGs}{Either a dataframe of LUGs obtained from fun.ExtractLUG, or a plain character vector of LUG gene symbols. If supplied, the LUG-estimation step is skipped (the per-gene \verb{LUG/*.rds} files must already exist in \code{DirOut}). (optional,default: NULL)}
+\item{LUGs}{Either a dataframe of LUGs obtained from fun.ExtractLUG, or a plain character vector of LUG gene symbols. If supplied, the LUG-estimation step is skipped (the per-gene \verb{LUG/*.rds} files must already exist in \code{DirOut}). A supplied set is only an input (usually a subset of an already estimated \code{Var.LUGs}) and is never written to disk. (optional,default: NULL)}
 
 \item{PhyloDepth}{A dataframe of PhyloDepth obtained from fun.GetPhyloDepthOfLUGs. (optional,default: NULL)}
 

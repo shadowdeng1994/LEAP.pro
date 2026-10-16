@@ -4,7 +4,7 @@
 #'
 #' @param TarCAObject A TarCA object obtained from CreateTarCAObject. (default: NULL)
 #' @param ExpreMatrix A matrix of expression levels corresponding to the cell phylogeny, or a Seurat object whose cells match the tree tips. (default: NULL)
-#' @param LUGs Either a dataframe of LUGs obtained from fun.ExtractLUG, or a plain character vector of LUG gene symbols. If supplied, the LUG-estimation step is skipped (the per-gene `LUG/*.rds` files must already exist in `DirOut`). (optional,default: NULL)
+#' @param LUGs Either a dataframe of LUGs obtained from fun.ExtractLUG, or a plain character vector of LUG gene symbols. If supplied, the LUG-estimation step is skipped (the per-gene `LUG/*.rds` files must already exist in `DirOut`). A supplied set is only an input (usually a subset of an already estimated `Var.LUGs`) and is never written to disk. (optional,default: NULL)
 #' @param PhyloDepth A dataframe of PhyloDepth obtained from fun.GetPhyloDepthOfLUGs. (optional,default: NULL)
 #' @param DirOut Path to saving the LUG object. (default: "LEAPOutput/")
 #' @param TopGene Threshold of highly expressed population. (default: 0.1)
@@ -31,6 +31,12 @@
 GetInternalMatrix <- function(TarCAObject=NULL,ExpreMatrix=NULL,LUGs=NULL,PhyloDepth=NULL,DirOut="LEAPOutput/",TopGene=0.1,NumShuf=1000,p_threshold=0.01,MinAct=3,SeedFrom=NULL,Threads=4,SaveObject=TRUE,Redo=FALSE,Assay=NULL,Layer="data",OnlyLUG=FALSE,Force=FALSE,ChunkSize=NULL){
   tmp.t0 <- Sys.time()
 
+  ## A caller-supplied LUG set is an input (typically a subset of an already
+  ## estimated `Var.LUGs.rds`), not a new result, so it is never written to
+  ## disk. The estimator outputs (`Var.LUGs.rds`, `Var.PhyloDepthOfLUGs.rds`,
+  ## `Var.InternalState.rds`) are saved as usual.
+  tmp.suppliedLUGs <- !is.null(LUGs)
+
   ## accept a plain character vector of gene symbols as the LUG set
   if(!is.null(LUGs)&&!is.data.frame(LUGs)){
     Var.LUGs <- data.frame(Symbol=as.character(LUGs),Sig=TRUE,stringsAsFactors=FALSE)
@@ -55,7 +61,10 @@ GetInternalMatrix <- function(TarCAObject=NULL,ExpreMatrix=NULL,LUGs=NULL,PhyloD
   if(OnlyLUG){
     if(SaveObject){
       if(!dir.exists(DirOut)){ dir.create(DirOut,recursive=TRUE) }
-      saveRDS(Var.LUGs,paste0(DirOut,"/Var.LUGs.rds"))
+      ## a supplied LUG set is only an input -> nothing to save
+      if(!tmp.suppliedLUGs){
+        saveRDS(Var.LUGs,paste0(DirOut,"/Var.LUGs.rds"))
+      }
     }
     fun.message("==> OnlyLUG = TRUE; returning LUGs (total ",fun.secs(tmp.t0),"s).")
     return(Var.LUGs)
@@ -79,7 +88,12 @@ GetInternalMatrix <- function(TarCAObject=NULL,ExpreMatrix=NULL,LUGs=NULL,PhyloD
   if(SaveObject){
     fun.message("==> Saving to ",DirOut,".")
     tmp.t <- Sys.time()
-    saveRDS(Var.LUGs,paste0(DirOut,"/Var.LUGs.rds"))
+    ## A supplied LUG set is only an input (a subset of the estimated Var.LUGs),
+    ## so no LUG file is written for it. PhyloDepth and InternalState are
+    ## estimator outputs and are always written.
+    if(!tmp.suppliedLUGs){
+      saveRDS(Var.LUGs,paste0(DirOut,"/Var.LUGs.rds"))
+    }
     saveRDS(Var.PhyloDepthOfLUGs,paste0(DirOut,"/Var.PhyloDepthOfLUGs.rds"))
     saveRDS(Var.InternalState,paste0(DirOut,"/Var.InternalState.rds"))
     fun.message("==> Saving done in ",fun.secs(tmp.t),"s.")

@@ -247,6 +247,11 @@ Var.InternalMatrix <- GetInternalMatrix(
 )
 ```
 
+A supplied `LUGs` is an **input** (usually a subset of an already estimated
+`Var.LUGs`), not a result, so it is **not** written to disk and never overwrites
+`Var.LUGs.rds`. `Var.PhyloDepthOfLUGs.rds` and `Var.InternalState.rds` are still
+written as usual.
+
 ### Parallelism
 
 Pass `Threads` to the functions above; each call runs its gene- and
