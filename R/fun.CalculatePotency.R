@@ -18,7 +18,7 @@
 #'   (default: NULL)
 #'
 #' @returns A dataframe with potency information for each internal node
-#'   (`NodeName`, `CladeSize`, `On` = occupied categories, `ShannonEntropy` =
+#'   (`NodeLabel`, `CladeSize`, `On` = occupied categories, `ShannonEntropy` =
 #'   plug-in Shannon entropy in nats, `adjSE_MillerMadow` = Miller-Madow
 #'   bias-corrected entropy in nats, and `DetailInfo`).
 #' @export
@@ -77,7 +77,7 @@ fun.CalculatePotency <- function(TarCAObject,Nodes,Threads=4,DirOut="LEAPOutput/
   })
 
   Var.Potency <- data.frame(
-    NodeName=Nodes,
+    NodeLabel=Nodes,
     CladeSize=tmp.size,
     On=tmp.on,
     ShannonEntropy=tmp.ent.nats,

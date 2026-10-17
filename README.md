@@ -177,7 +177,7 @@ All results are saved to the directory given by `DirOut` (default `"LEAPOutput/"
 - `Var.Anchors.rds` — transfer anchors (label-independent; loaded automatically if already present)
 - `Var.Predictions_<index>.rds` — label transfer predictions, where `<index>` is `Prefix` or a random 4-character `[0-9A-Za-z]` string (always rewritten)
 - `Var.PredictedState_<index>.rds` — final predicted states mapped onto the phylogeny, named the same way (always rewritten)
-- `Var.Potency_<index>.rds` — per-internal-node potency (Shannon entropy of the clade's tip annotations), named the same way (always rewritten). Columns: `NodeName`, `CladeSize`, `On` (occupied categories), `ShannonEntropy` (plug-in entropy, nats), `adjSE_MillerMadow` (Miller-Madow bias-corrected entropy, nats), and `DetailInfo`
+- `Var.Potency_<index>.rds` — per-internal-node potency (Shannon entropy of the clade's tip annotations), named the same way (always rewritten). Columns: `NodeLabel`, `CladeSize`, `On` (occupied categories), `ShannonEntropy` (plug-in entropy, nats), `adjSE_MillerMadow` (Miller-Madow bias-corrected entropy, nats), and `DetailInfo`
 
 ## Notes
 

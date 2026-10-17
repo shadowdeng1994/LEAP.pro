@@ -31,7 +31,7 @@ If \code{NULL}, a random 4-character index of \verb{[0-9A-Za-z]} is generated.
 }
 \value{
 A dataframe with potency information for each internal node
-(\code{NodeName}, \code{CladeSize}, \code{On} = occupied categories,
+(\code{NodeLabel}, \code{CladeSize}, \code{On} = occupied categories,
 \code{ShannonEntropy} = plug-in Shannon entropy in nats,
 \code{adjSE_MillerMadow} = Miller-Madow bias-corrected entropy in nats, and
 \code{DetailInfo}).
