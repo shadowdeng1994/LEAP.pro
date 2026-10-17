@@ -9,7 +9,8 @@ GetPredictedState(
   Predictions,
   RemoveRoot = NULL,
   DirOut = "LEAPOutput/",
-  SaveObject = TRUE
+  SaveObject = TRUE,
+  Prefix = NULL
 )
 }
 \arguments{
@@ -22,12 +23,21 @@ GetPredictedState(
 \item{DirOut}{Path to saving the LUG object. (default: "LEAPOutput/")}
 
 \item{SaveObject}{Saving all objects. (default: TRUE)}
+
+\item{Prefix}{Index used to name the output (\verb{Var.PredictedState_<Prefix>.rds}).
+If \code{NULL}, a random 4-character index of \verb{[0-9A-Za-z]} is generated.
+(default: NULL)}
 }
 \value{
 A datafraome of impuated annotation on the cell phylogeny.
 }
 \description{
 Mapping inferred state to the nodes and their unsolved descendants.
+
+The result depends on \code{Predictions} (i.e. on the transferred labels), so it
+is always (re)computed and written to \verb{Var.PredictedState_<index>.rds}, where
+\verb{<index>} is \code{Prefix} or a random 4-character one by default. A new \code{Prefix}
+writes a new file, and re-running with the same \code{Prefix} overwrites it.
 }
 \examples{
 Var.PredictedState <- GetPredictedState(Data.TarCA,Var.Predictions)

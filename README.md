@@ -131,7 +131,8 @@ Var.Predictions <- RunLabelTransfer(
   Var.ReferenceMatrix,
   tmp.Label,
   DirOut = "MyOutput/",
-  SaveObject = TRUE
+  SaveObject = TRUE,
+  Prefix = "E7.5"          # optional; default: a random 4-character index
 )
 ```
 
@@ -145,7 +146,8 @@ Var.PredictedState <- GetPredictedState(
   Var.Predictions,
   RemoveRoot = "Root",
   DirOut = "MyOutput/",
-  SaveObject = TRUE
+  SaveObject = TRUE,
+  Prefix = "E7.5"          # use the same Prefix as RunLabelTransfer
 )
 ```
 
@@ -171,10 +173,10 @@ All results are saved to the directory given by `DirOut` (default `"LEAPOutput/"
 - `Var.PhyloDepthOfLUGs.rds` — phylogenetic depth of LUG activation events
 - `Var.InternalState.rds` — reconstructed binarized transcriptome of internal nodes (sparse `dgCMatrix`)
 - `Var.RefMatrix.rds` — binarized reference matrix (sparse `dgCMatrix`)
-- `Var.QuerySeurat.rds` / `Var.RefSeurat.rds` — Seurat objects for query and reference
-- `Var.Anchors.rds` — transfer anchors
-- `Var.Predictions.rds` — label transfer predictions
-- `Var.PredictedState.rds` — final predicted states mapped onto the phylogeny
+- `Var.QuerySeurat.rds` / `Var.RefSeurat.rds` — Seurat objects for query and reference (label-independent; loaded automatically if already present)
+- `Var.Anchors.rds` — transfer anchors (label-independent; loaded automatically if already present)
+- `Var.Predictions_<index>.rds` — label transfer predictions, where `<index>` is `Prefix` or a random 4-character `[0-9A-Za-z]` string (always rewritten)
+- `Var.PredictedState_<index>.rds` — final predicted states mapped onto the phylogeny, named the same way (always rewritten)
 
 ## Notes
 
@@ -251,6 +253,41 @@ A supplied `LUGs` is an **input** (usually a subset of an already estimated
 `Var.LUGs`), not a result, so it is **not** written to disk and never overwrites
 `Var.LUGs.rds`. `Var.PhyloDepthOfLUGs.rds` and `Var.InternalState.rds` are still
 written as usual.
+
+### Re-running with a different label set
+
+`Var.QuerySeurat.rds`, `Var.RefSeurat.rds` and `Var.Anchors.rds` depend only on
+the two binarized matrices, **not** on the transfer labels, so `RunLabelTransfer`
+loads them from `DirOut` when they already exist (set `Force = TRUE` to recompute
+and overwrite them). Only the predictions depend on the labels.
+
+The label-dependent outputs are **always rewritten**, and their names carry an
+index: `<index>` is `Prefix` or — if `Prefix` is `NULL` (default) — a random
+4-character `[0-9A-Za-z]` string.
+
+| Function | Output |
+|---|---|
+| `RunLabelTransfer` | `Var.Predictions_<index>.rds` |
+| `GetPredictedState` | `Var.PredictedState_<index>.rds` |
+
+Give the same `Prefix` to both calls so one label set produces one matching pair
+of files; a new `Prefix` writes new files, the same `Prefix` overwrites them.
+Changing only the label vector therefore lets you run as many label sets as you
+like without clobbering the others:
+
+```r
+Var.Predictions.E75 <- RunLabelTransfer(
+  Var.InternalMatrix, Var.ReferenceMatrix, tmp.Label,
+  DirOut = "MyOutput/", Prefix = "E7.5"
+)
+Var.PredictedState.E75 <- GetPredictedState(
+  Data.TarCA, Var.Predictions.E75,
+  DirOut = "MyOutput/", Prefix = "E7.5"
+)
+```
+
+With the default random index (no `Prefix`) every run writes a new file, so pass
+`Prefix` if you want a stable, recognisable name.
 
 ### Parallelism
 
@@ -334,6 +371,11 @@ For example, `GetInternalMatrix` prints the time of each sub-step, and at level
 - Already-computed `LUG/*.rds` and `Shuffle/*.rds` are **skipped by default**;
   set **`Force = TRUE`** to recompute them (e.g. after changing `TopGene` or
   `SeedFrom`). `Redo` is kept as an alias for `Force`.
+- **`RunLabelTransfer`** likewise reuses `Var.QuerySeurat.rds`,
+  `Var.RefSeurat.rds` and `Var.Anchors.rds` from `DirOut` when they exist
+  (`Force = TRUE` recomputes them). Its label-dependent output,
+  `Var.Predictions_<Prefix|random>.rds`, is always rewritten, as is
+  `GetPredictedState`'s `Var.PredictedState_<Prefix|random>.rds`.
 
 ## Contributing
 ### Contributors

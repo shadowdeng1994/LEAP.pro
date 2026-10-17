@@ -15,7 +15,9 @@ RunLabelTransfer(
   Verbose = FALSE,
   DirOut = "LEAPOutput/",
   SaveObject = TRUE,
-  DoUMAP = FALSE
+  DoUMAP = FALSE,
+  Prefix = NULL,
+  Force = FALSE
 )
 }
 \arguments{
@@ -40,12 +42,32 @@ RunLabelTransfer(
 \item{SaveObject}{Saving all objects. (default: TRUE)}
 
 \item{DoUMAP}{Compute UMAP embedding for the Seurat objects. (default: FALSE)}
+
+\item{Prefix}{Index used to name the label-dependent output
+(\verb{Var.Predictions_<Prefix>.rds}). If \code{NULL}, a random 4-character index of
+\verb{[0-9A-Za-z]} is generated. (default: NULL)}
+
+\item{Force}{Recompute and overwrite the cached label-independent helpers
+\code{Var.QuerySeurat.rds}, \code{Var.RefSeurat.rds} and \code{Var.Anchors.rds} instead of
+loading them. (default: FALSE)}
 }
 \value{
 A dataframe of transferred result.
 }
 \description{
 Run label transfer from reference data to query data, both of which were binarized by LUG.
+
+The Seurat objects and the transfer anchors do \strong{not} depend on the transfer
+labels, so they are cached in \code{DirOut} (\code{Var.QuerySeurat.rds},
+\code{Var.RefSeurat.rds}, \code{Var.Anchors.rds}) and reused on the next call (set
+\code{Force = TRUE} to recompute them).
+
+Only the predictions depend on \code{TransferLabel}. They are written to
+\verb{Var.Predictions_<index>.rds}, where \verb{<index>} is \code{Prefix} or a random
+4-character one by default. The prediction file is always (re)computed: a new
+\code{Prefix} writes a new file, and re-running with the same \code{Prefix} overwrites
+it. Changing only \code{TransferLabel} therefore lets you run as many label sets as
+you like without clobbering the others.
 }
 \examples{
 Var.Predictions <- RunLabelTransfer(Var.InternalMatrix,Var.ReferenceMatrix,Data.Ref_metadata$lineage)
