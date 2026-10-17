@@ -17,7 +17,10 @@
 #'   If `NULL`, a random 4-character index of `[0-9A-Za-z]` is generated.
 #'   (default: NULL)
 #'
-#' @returns A dataframe with potency information for each internal node.
+#' @returns A dataframe with potency information for each internal node
+#'   (`NodeName`, `CladeSize`, `On` = occupied categories, `ShannonEntropy` =
+#'   plug-in Shannon entropy in nats, `adjSE_MillerMadow` = Miller-Madow
+#'   bias-corrected entropy in nats, and `DetailInfo`).
 #' @export
 #'
 #' @examples Var.Potency <- fun.CalculatePotency(Data.TarCA,Var.PredictedState$NodeLabel)
@@ -61,6 +64,14 @@ fun.CalculatePotency <- function(TarCAObject,Nodes,Threads=4,DirOut="LEAPOutput/
   tmp.logp[tmp.counts==0] <- 0
   tmp.ent <- -rowSums(tmp.logp)
 
+  ## The plug-in entropy above is in bits (log2). The Miller-Madow bias
+  ## correction (K-1)/(2N) is defined for the natural-log (nats) estimator, so
+  ## convert bits -> nats (x log(2)) first; `adjSE_MillerMadow` is then the
+  ## bias-corrected entropy in nats, with K = On (occupied categories) and
+  ## N = CladeSize.
+  tmp.ent.nats <- tmp.ent*log(2)
+  tmp.adjSE <- tmp.ent.nats + (tmp.on-1)/(2*tmp.size)
+
   tmp.detail <- apply(tmp.counts,1,function(cc){
     paste(paste0(tmp.cats[cc>0],"[",cc[cc>0],"]"),collapse = ";")
   })
@@ -69,7 +80,8 @@ fun.CalculatePotency <- function(TarCAObject,Nodes,Threads=4,DirOut="LEAPOutput/
     NodeName=Nodes,
     CladeSize=tmp.size,
     On=tmp.on,
-    ShannonEntropy=tmp.ent,
+    ShannonEntropy=tmp.ent.nats,
+    adjSE_MillerMadow=tmp.adjSE,
     DetailInfo=tmp.detail,
     stringsAsFactors=FALSE,
     row.names=NULL

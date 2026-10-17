@@ -30,7 +30,11 @@ If \code{NULL}, a random 4-character index of \verb{[0-9A-Za-z]} is generated.
 (default: NULL)}
 }
 \value{
-A dataframe with potency information for each internal node.
+A dataframe with potency information for each internal node
+(\code{NodeName}, \code{CladeSize}, \code{On} = occupied categories,
+\code{ShannonEntropy} = plug-in Shannon entropy in nats,
+\code{adjSE_MillerMadow} = Miller-Madow bias-corrected entropy in nats, and
+\code{DetailInfo}).
 }
 \description{
 Mapping inferred state to the nodes and their unsolved descendants.
