@@ -47,5 +47,5 @@ NULL.
 Title
 }
 \examples{
-fun.RunLUEEstimator(Data.TarCA,Var.TPM)
+fun.RunLUGEstimator(Data.TarCA,Var.TPM)
 }

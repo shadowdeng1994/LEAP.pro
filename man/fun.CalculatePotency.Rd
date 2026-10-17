@@ -9,7 +9,8 @@ fun.CalculatePotency(
   Nodes,
   Threads = 4,
   DirOut = "LEAPOutput/",
-  SaveObject = TRUE
+  SaveObject = TRUE,
+  Prefix = NULL
 )
 }
 \arguments{
@@ -17,18 +18,28 @@ fun.CalculatePotency(
 
 \item{Nodes}{A vector of internal nodes.}
 
-\item{Threads}{Number of cores. (default: 4)}
+\item{Threads}{Number of cores. Kept for compatibility: the computation is
+fully vectorised and does not use it. (default: 4)}
 
 \item{DirOut}{Path to saving the LUG object. (default: "LEAPOutput/")}
 
 \item{SaveObject}{Saving all objects. (default: TRUE)}
+
+\item{Prefix}{Index used to name the output (\verb{Var.Potency_<Prefix>.rds}).
+If \code{NULL}, a random 4-character index of \verb{[0-9A-Za-z]} is generated.
+(default: NULL)}
 }
 \value{
 A dataframe with potency information for each internal node.
 }
 \description{
 Mapping inferred state to the nodes and their unsolved descendants.
+
+The potency itself depends only on the tree and the tip annotation, but it is
+usually computed for the nodes of one particular state set, so it is always
+(re)written as \verb{Var.Potency_<index>.rds}, where \verb{<index>} is \code{Prefix} or a
+random 4-character one by default.
 }
 \examples{
-Var.Potency <- CalculatePotency(Data.TarCA,Var.PredictedState$NodeLabel)
+Var.Potency <- fun.CalculatePotency(Data.TarCA,Var.PredictedState$NodeLabel)
 }

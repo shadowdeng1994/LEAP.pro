@@ -177,6 +177,7 @@ All results are saved to the directory given by `DirOut` (default `"LEAPOutput/"
 - `Var.Anchors.rds` — transfer anchors (label-independent; loaded automatically if already present)
 - `Var.Predictions_<index>.rds` — label transfer predictions, where `<index>` is `Prefix` or a random 4-character `[0-9A-Za-z]` string (always rewritten)
 - `Var.PredictedState_<index>.rds` — final predicted states mapped onto the phylogeny, named the same way (always rewritten)
+- `Var.Potency_<index>.rds` — per-internal-node potency (Shannon entropy of the clade's tip annotations), named the same way (always rewritten)
 
 ## Notes
 
@@ -269,8 +270,9 @@ index: `<index>` is `Prefix` or — if `Prefix` is `NULL` (default) — a random
 |---|---|
 | `RunLabelTransfer` | `Var.Predictions_<index>.rds` |
 | `GetPredictedState` | `Var.PredictedState_<index>.rds` |
+| `fun.CalculatePotency` | `Var.Potency_<index>.rds` |
 
-Give the same `Prefix` to both calls so one label set produces one matching pair
+Give the same `Prefix` to these calls so one label set produces one matching set
 of files; a new `Prefix` writes new files, the same `Prefix` overwrites them.
 Changing only the label vector therefore lets you run as many label sets as you
 like without clobbering the others:
@@ -282,6 +284,10 @@ Var.Predictions.E75 <- RunLabelTransfer(
 )
 Var.PredictedState.E75 <- GetPredictedState(
   Data.TarCA, Var.Predictions.E75,
+  DirOut = "MyOutput/", Prefix = "E7.5"
+)
+Var.Potency.E75 <- fun.CalculatePotency(
+  Data.TarCA, Var.PredictedState.E75$NodeLabel,
   DirOut = "MyOutput/", Prefix = "E7.5"
 )
 ```

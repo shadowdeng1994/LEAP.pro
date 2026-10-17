@@ -6,7 +6,7 @@
 #' @returns A dataframe with later state.
 #' @export
 #'
-#' @examples fun.AssignLaterStage(Data.TarCA,Var.Predictions)
+#' @examples fun.AssignLaterState(Data.TarCA,Var.Predictions)
 fun.AssignLaterState <- function(TarCAObject,Predictions){
   tmp.ni <- TarCAObject$NodeIndex
   if(is.null(tmp.ni)){ stop("TarCAObject lacks 'NodeIndex'; recreate it with CreateTarCAObject().") }

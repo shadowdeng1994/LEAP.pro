@@ -17,7 +17,7 @@
 #' @returns NULL.
 #' @export
 #'
-#' @examples fun.RunLUEEstimator(Data.TarCA,Var.TPM)
+#' @examples fun.RunLUGEstimator(Data.TarCA,Var.TPM)
 fun.RunLUGEstimator <- function(TarCAObject,ExpreMatrix,DirOut="LEAPOutput/",TopGene=0.1,Threads=4,Redo=FALSE,Assay=NULL,Layer="data",Force=FALSE,ChunkSize=NULL){
   Redo <- isTRUE(Redo)||isTRUE(Force)
   tmp.dirout <- paste0(DirOut,"/LUG/")

@@ -18,5 +18,5 @@ A dataframe with later state.
 Title
 }
 \examples{
-fun.AssignLaterStage(Data.TarCA,Var.Predictions)
+fun.AssignLaterState(Data.TarCA,Var.Predictions)
 }

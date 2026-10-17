@@ -2,17 +2,26 @@
 #' @description
 #' Mapping inferred state to the nodes and their unsolved descendants.
 #'
+#' The potency itself depends only on the tree and the tip annotation, but it is
+#' usually computed for the nodes of one particular state set, so it is always
+#' (re)written as `Var.Potency_<index>.rds`, where `<index>` is `Prefix` or a
+#' random 4-character one by default.
+#'
 #' @param TarCAObject A TarCA object obtained from CreateTarCAObject.
 #' @param Nodes A vector of internal nodes.
-#' @param Threads Number of cores. (default: 4)
+#' @param Threads Number of cores. Kept for compatibility: the computation is
+#'   fully vectorised and does not use it. (default: 4)
 #' @param DirOut Path to saving the LUG object. (default: "LEAPOutput/")
 #' @param SaveObject Saving all objects. (default: TRUE)
+#' @param Prefix Index used to name the output (`Var.Potency_<Prefix>.rds`).
+#'   If `NULL`, a random 4-character index of `[0-9A-Za-z]` is generated.
+#'   (default: NULL)
 #'
 #' @returns A dataframe with potency information for each internal node.
 #' @export
 #'
-#' @examples Var.Potency <- CalculatePotency(Data.TarCA,Var.PredictedState$NodeLabel)
-fun.CalculatePotency <- function(TarCAObject,Nodes,Threads=4,DirOut="LEAPOutput/",SaveObject=TRUE){
+#' @examples Var.Potency <- fun.CalculatePotency(Data.TarCA,Var.PredictedState$NodeLabel)
+fun.CalculatePotency <- function(TarCAObject,Nodes,Threads=4,DirOut="LEAPOutput/",SaveObject=TRUE,Prefix=NULL){
   tmp.ni <- TarCAObject$NodeIndex
   tmp.tipAnn <- as.character(TarCAObject$Name2Meta$TipAnn)
   names(tmp.tipAnn) <- rownames(TarCAObject$Name2Meta)
@@ -20,9 +29,18 @@ fun.CalculatePotency <- function(TarCAObject,Nodes,Threads=4,DirOut="LEAPOutput/
   ## Pre-order positions of the tips, grouped by annotation. Counting the
   ## tips of a clade then only needs two binary searches per annotation
   ## (O((N + #nodes*K) log N)) instead of enumerating every clade.
+  ##
+  ## `findInterval()` requires sorted breakpoints, so sort each annotation's
+  ## positions: `NodeIndex$tin` is a DFS visit order, and whether the tips are
+  ## visited in tip-label order depends on the child order of the tree's edge
+  ## matrix, which does not hold for every tree (on such trees the unsorted
+  ## breaks make `findInterval()` fail).
   tmp.tipCat <- tmp.tipAnn[tmp.ni$label[tmp.ni$isTip]]
-  tmp.catPos <- split(tmp.ni$tin[seq_len(tmp.ni$ntip)],tmp.tipCat)
+  tmp.catPos <- lapply(split(tmp.ni$tin[seq_len(tmp.ni$ntip)],tmp.tipCat),sort)
+  ## Tips without an annotation cannot be counted; `split()` already drops
+  ## them, so drop the `NA` group as well (same as `table()`).
   tmp.cats <- sort(unique(tmp.tipCat))
+  tmp.cats <- tmp.cats[!is.na(tmp.cats)]
 
   tmp.idx <- match(Nodes,tmp.ni$label)
   tmp.tins <- tmp.ni$tin[tmp.idx]
@@ -58,8 +76,12 @@ fun.CalculatePotency <- function(TarCAObject,Nodes,Threads=4,DirOut="LEAPOutput/
   )
 
   if(SaveObject){
-    fun.message("==> Saving Potency to ",DirOut,".")
-    saveRDS(Var.Potency,paste0(DirOut,"/Var.Potency.rds"))
+    if(!dir.exists(DirOut)){ dir.create(DirOut,recursive=TRUE) }
+    tmp.index <- Prefix
+    if(is.null(tmp.index)){ tmp.index <- fun.RandomIndex(4) }
+    tmp.fileout <- paste0(DirOut,"/Var.Potency_",tmp.index,".rds")
+    fun.message("==> Saving Potency to ",tmp.fileout,".")
+    saveRDS(Var.Potency,tmp.fileout)
   }
 
   return(Var.Potency)
